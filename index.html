@@ -1,0 +1,1782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholEditor – Academic Document Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+:root {
+  --bg-dark: #1a1a2e;
+  --bg-panel: #16213e;
+  --bg-toolbar: #0f3460;
+  --bg-editor: #1e1e2e;
+  --bg-preview: #ffffff;
+  --accent: #4fc3f7;
+  --accent2: #81d4fa;
+  --accent-green: #4caf93;
+  --text-primary: #e0e0e0;
+  --text-muted: #9e9e9e;
+  --text-dark: #1a1a2e;
+  --border: #2a2a4a;
+  --border-light: #3a3a5a;
+  --toolbar-h: 44px;
+  --sidebar-w: 220px;
+  --header-h: 48px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HEADER ── */
+#header {
+  height: var(--header-h);
+  background: var(--bg-toolbar);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+#header .logo {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#header .logo span { color: #fff; }
+
+#doc-title-input {
+  flex: 1;
+  max-width: 320px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  padding: 6px 12px;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+}
+#doc-title-input:focus { border-color: var(--accent); }
+
+.header-actions { display: flex; gap: 8px; margin-left: auto; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.15s;
+}
+.btn-primary { background: var(--accent); color: #0f3460; }
+.btn-primary:hover { background: var(--accent2); }
+.btn-secondary { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid var(--border-light); }
+.btn-secondary:hover { background: rgba(255,255,255,0.18); }
+.btn-green { background: var(--accent-green); color: #fff; }
+.btn-green:hover { filter: brightness(1.1); }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+
+/* ── BODY LAYOUT ── */
+#body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── SIDEBAR ── */
+#sidebar {
+  width: var(--sidebar-w);
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+.sidebar-section {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 4px 14px 8px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  border-radius: 0;
+  transition: background 0.1s;
+}
+.sidebar-item:hover { background: rgba(79,195,247,0.1); color: var(--accent); }
+.sidebar-item.active { background: rgba(79,195,247,0.15); color: var(--accent); border-left: 2px solid var(--accent); }
+.sidebar-item .icon { font-size: 15px; width: 18px; }
+
+.template-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 8px 10px;
+}
+.template-card {
+  background: var(--bg-editor);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 6px;
+  font-size: 11px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-muted);
+}
+.template-card:hover { border-color: var(--accent); color: var(--accent); background: rgba(79,195,247,0.07); }
+.template-card .t-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+
+/* ── MAIN AREA ── */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── TOOLBAR ── */
+#toolbar {
+  height: auto;
+  min-height: var(--toolbar-h);
+  background: var(--bg-editor);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 4px 10px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.toolbar-sep {
+  width: 1px;
+  height: 22px;
+  background: var(--border-light);
+  margin: 0 4px;
+}
+
+.tb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 28px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  transition: background 0.1s;
+  position: relative;
+}
+.tb-btn:hover { background: rgba(79,195,247,0.15); color: var(--accent); }
+.tb-btn.active { background: rgba(79,195,247,0.2); color: var(--accent); }
+
+.tb-select {
+  height: 28px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid var(--border-light);
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  padding: 0 6px;
+  cursor: pointer;
+  outline: none;
+}
+.tb-select:focus { border-color: var(--accent); }
+
+.tb-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 0 4px;
+}
+
+/* ── EDITOR+PREVIEW SPLIT ── */
+#split-area {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+#editor-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+  min-width: 200px;
+}
+
+#editor-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 5px 14px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#editor {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 48px;
+  outline: none;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #c8d0e0;
+  background: var(--bg-editor);
+  min-height: 0;
+  font-family: 'Inter', sans-serif;
+  caret-color: var(--accent);
+}
+
+#editor:empty:before {
+  content: 'Start writing your document here…';
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+#editor h1 { font-size: 26px; font-weight: 700; color: #fff; margin: 1.2em 0 0.4em; border-bottom: 2px solid var(--accent); padding-bottom: 8px; }
+#editor h2 { font-size: 20px; font-weight: 600; color: #e0e8ff; margin: 1em 0 0.3em; }
+#editor h3 { font-size: 16px; font-weight: 600; color: #c8d4f0; margin: 0.8em 0 0.3em; }
+#editor p { margin-bottom: 0.8em; }
+#editor ul, #editor ol { margin: 0.5em 0 0.8em 1.5em; }
+#editor li { margin-bottom: 4px; }
+#editor table { border-collapse: collapse; margin: 1em 0; width: 100%; }
+#editor td, #editor th { border: 1px solid var(--border-light); padding: 8px 12px; font-size: 13px; }
+#editor th { background: rgba(79,195,247,0.1); color: var(--accent); font-weight: 600; }
+#editor code { font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px; font-size: 12px; color: #f48fb1; }
+#editor pre { font-family: 'JetBrains Mono', monospace; background: #0d0d1a; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 1em 0; border: 1px solid var(--border); }
+#editor blockquote { border-left: 3px solid var(--accent); padding-left: 16px; color: var(--text-muted); font-style: italic; margin: 1em 0; }
+#editor .math-block { background: rgba(79,195,247,0.05); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin: 1em 0; text-align: center; }
+
+/* ── RESIZER ── */
+#resizer {
+  width: 5px;
+  background: var(--border);
+  cursor: col-resize;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+#resizer:hover, #resizer.dragging { background: var(--accent); }
+
+/* ── PREVIEW PANE ── */
+#preview-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 200px;
+}
+
+#preview-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 5px 14px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#preview-scroll {
+  flex: 1;
+  overflow-y: auto;
+  background: #d0d0d8;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#preview-page {
+  background: #ffffff;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 25mm 20mm;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  border-radius: 2px;
+  font-family: 'Times New Roman', serif;
+  font-size: 12pt;
+  line-height: 1.6;
+  color: #1a1a1a;
+  max-width: 100%;
+}
+
+#preview-page h1 { font-size: 18pt; font-weight: bold; margin: 12pt 0 6pt; border-bottom: 1pt solid #333; padding-bottom: 4pt; }
+#preview-page h2 { font-size: 14pt; font-weight: bold; margin: 10pt 0 4pt; }
+#preview-page h3 { font-size: 12pt; font-weight: bold; margin: 8pt 0 3pt; }
+#preview-page p { margin-bottom: 8pt; text-align: justify; }
+#preview-page table { border-collapse: collapse; width: 100%; margin: 8pt 0; font-size: 10pt; }
+#preview-page td, #preview-page th { border: 1pt solid #999; padding: 4pt 8pt; }
+#preview-page th { background: #f0f0f0; font-weight: bold; }
+#preview-page code { font-family: 'Courier New', monospace; background: #f5f5f5; padding: 1pt 4pt; font-size: 10pt; }
+#preview-page blockquote { border-left: 3pt solid #666; padding-left: 12pt; color: #555; margin: 8pt 0; font-style: italic; }
+
+/* ── STATUS BAR ── */
+#statusbar {
+  height: 24px;
+  background: var(--bg-toolbar);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 20px;
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+#statusbar span { display: flex; align-items: center; gap: 4px; }
+#statusbar .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-green); }
+
+/* ── MODALS ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.hidden { display: none; }
+
+.modal {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 24px;
+  min-width: 420px;
+  max-width: 580px;
+  width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #fff; display: flex; align-items: center; gap: 8px; }
+.modal label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px; margin-top: 12px; }
+.modal input, .modal select, .modal textarea {
+  width: 100%;
+  background: var(--bg-editor);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 13px;
+  padding: 8px 12px;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+}
+.modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--accent); }
+.modal textarea { min-height: 80px; resize: vertical; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+.modal-close { position: absolute; top: 12px; right: 14px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; }
+
+/* ── MATH MODAL ── */
+#math-preview-box {
+  background: var(--bg-editor);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  min-height: 60px;
+  margin-top: 10px;
+  text-align: center;
+  font-size: 16px;
+  color: #fff;
+}
+.math-symbols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 10px;
+}
+.math-sym-btn {
+  padding: 4px 8px;
+  background: var(--bg-editor);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  transition: all 0.1s;
+}
+.math-sym-btn:hover { background: rgba(79,195,247,0.15); border-color: var(--accent); color: var(--accent); }
+
+/* ── UPLOAD ZONE ── */
+.upload-zone {
+  border: 2px dashed var(--border-light);
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 10px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--accent);
+  background: rgba(79,195,247,0.07);
+  color: var(--accent);
+}
+.upload-zone .upload-icon { font-size: 32px; display: block; margin-bottom: 8px; }
+
+/* ── CITATIONS ── */
+#citations-list { margin-top: 10px; }
+.citation-item {
+  background: var(--bg-editor);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.citation-item .cite-text { flex: 1; color: var(--text-primary); }
+.citation-item .cite-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.cite-num {
+  background: var(--accent);
+  color: #0f3460;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+/* ── FIND/REPLACE ── */
+#findbar {
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  padding: 6px 12px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+#findbar.visible { display: flex; }
+#findbar input {
+  background: var(--bg-editor);
+  border: 1px solid var(--border-light);
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 4px 10px;
+  outline: none;
+  width: 160px;
+}
+#findbar input:focus { border-color: var(--accent); }
+
+/* ── TOOLTIP ── */
+[data-tip] { position: relative; }
+[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111;
+  color: #fff;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* ── SCROLLBARS ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── COLOR PICKER ── */
+.color-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.color-swatch {
+  width: 22px; height: 22px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border 0.1s;
+}
+.color-swatch:hover { border-color: #fff; }
+
+/* Word count badge */
+#word-count { font-size: 11px; color: var(--text-muted); }
+
+/* Table size picker */
+#table-picker { display: grid; gap: 2px; }
+.table-cell-pick {
+  width: 16px; height: 16px;
+  border: 1px solid var(--border-light);
+  border-radius: 2px;
+  cursor: pointer;
+  background: var(--bg-editor);
+}
+.table-cell-pick.hover { background: rgba(79,195,247,0.4); border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ HEADER ══════════════════ -->
+<div id="header">
+  <div class="logo">📄 <span>Schol</span>Editor</div>
+  <input id="doc-title-input" type="text" value="Untitled Document" placeholder="Document title…" />
+  <div class="header-actions">
+    <button class="btn btn-secondary btn-sm" onclick="openModal('upload-modal')" data-tip="Upload ZIP or DOCX">⬆ Import</button>
+    <button class="btn btn-secondary btn-sm" onclick="openModal('export-modal')" data-tip="Download document">⬇ Export</button>
+    <button class="btn btn-green btn-sm" onclick="compilePdf()" data-tip="Compile to PDF preview">▶ Compile</button>
+    <button class="btn btn-primary btn-sm" onclick="autoSave()">💾 Save</button>
+  </div>
+</div>
+
+<!-- ══════════════════ BODY ══════════════════ -->
+<div id="body">
+
+  <!-- ── SIDEBAR ── -->
+  <div id="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-title">Document</div>
+      <div class="sidebar-item active" onclick="showPanel('editor')" id="nav-editor"><span class="icon">✏️</span> Editor</div>
+      <div class="sidebar-item" onclick="showPanel('outline')" id="nav-outline"><span class="icon">📑</span> Outline</div>
+      <div class="sidebar-item" onclick="openModal('citations-modal')" id="nav-refs"><span class="icon">📚</span> References</div>
+      <div class="sidebar-item" onclick="openModal('upload-modal')"><span class="icon">📂</span> Files</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-title">Templates</div>
+      <div class="template-grid">
+        <div class="template-card" onclick="loadTemplate('research')" data-tip="Research Paper">
+          <span class="t-icon">🔬</span>Research
+        </div>
+        <div class="template-card" onclick="loadTemplate('thesis')" data-tip="Thesis/Dissertation">
+          <span class="t-icon">🎓</span>Thesis
+        </div>
+        <div class="template-card" onclick="loadTemplate('report')" data-tip="University Report">
+          <span class="t-icon">📋</span>Report
+        </div>
+        <div class="template-card" onclick="loadTemplate('cv')" data-tip="Academic CV">
+          <span class="t-icon">👤</span>CV
+        </div>
+        <div class="template-card" onclick="loadTemplate('letter')" data-tip="Cover Letter">
+          <span class="t-icon">✉️</span>Letter
+        </div>
+        <div class="template-card" onclick="loadTemplate('blank')" data-tip="Blank Document">
+          <span class="t-icon">📄</span>Blank
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-title">Insert</div>
+      <div class="sidebar-item" onclick="openModal('math-modal')"><span class="icon">∑</span> Equation</div>
+      <div class="sidebar-item" onclick="insertTable()"><span class="icon">⊞</span> Table</div>
+      <div class="sidebar-item" onclick="insertImage()"><span class="icon">🖼</span> Image</div>
+      <div class="sidebar-item" onclick="insertCode()"><span class="icon">&lt;/&gt;</span> Code Block</div>
+      <div class="sidebar-item" onclick="insertFootnote()"><span class="icon">¹</span> Footnote</div>
+      <div class="sidebar-item" onclick="insertTOC()"><span class="icon">📑</span> Table of Contents</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-title">Page Setup</div>
+      <div class="sidebar-item" onclick="openModal('page-modal')"><span class="icon">📐</span> Page Layout</div>
+      <div class="sidebar-item" onclick="toggleSpellcheck()"><span class="icon">✔</span> Spell Check</div>
+      <div class="sidebar-item" onclick="openModal('find-modal')"><span class="icon">🔍</span> Find & Replace</div>
+    </div>
+  </div>
+
+  <!-- ── MAIN AREA ── -->
+  <div id="main">
+
+    <!-- TOOLBAR -->
+    <div id="toolbar">
+      <!-- History -->
+      <button class="tb-btn" data-tip="Undo (Ctrl+Z)" onclick="document.execCommand('undo')">↩</button>
+      <button class="tb-btn" data-tip="Redo (Ctrl+Y)" onclick="document.execCommand('redo')">↪</button>
+      <div class="toolbar-sep"></div>
+
+      <!-- Font family -->
+      <select class="tb-select" id="font-family" style="width:130px" onchange="execFont(this.value)" data-tip="Font family">
+        <option value="Inter, sans-serif">Inter</option>
+        <option value="'Times New Roman', serif" selected>Times New Roman</option>
+        <option value="Georgia, serif">Georgia</option>
+        <option value="Arial, sans-serif">Arial</option>
+        <option value="'JetBrains Mono', monospace">Mono</option>
+        <option value="'Courier New', monospace">Courier</option>
+      </select>
+
+      <!-- Font size -->
+      <select class="tb-select" id="font-size" style="width:62px" onchange="execFontSize(this.value)" data-tip="Font size">
+        <option>8</option><option>9</option><option>10</option>
+        <option>11</option><option value="12" selected>12</option>
+        <option>14</option><option>16</option><option>18</option>
+        <option>20</option><option>24</option><option>28</option>
+        <option>32</option><option>36</option><option>48</option>
+      </select>
+      <div class="toolbar-sep"></div>
+
+      <!-- Formatting -->
+      <button class="tb-btn" data-tip="Bold (Ctrl+B)" onclick="fmt('bold')" id="btn-bold"><b>B</b></button>
+      <button class="tb-btn" data-tip="Italic (Ctrl+I)" onclick="fmt('italic')" id="btn-italic"><i>I</i></button>
+      <button class="tb-btn" data-tip="Underline (Ctrl+U)" onclick="fmt('underline')" id="btn-underline"><u>U</u></button>
+      <button class="tb-btn" data-tip="Strikethrough" onclick="fmt('strikeThrough')" style="text-decoration:line-through">S</button>
+      <button class="tb-btn" data-tip="Superscript" onclick="fmt('superscript')">x²</button>
+      <button class="tb-btn" data-tip="Subscript" onclick="fmt('subscript')">x₂</button>
+      <div class="toolbar-sep"></div>
+
+      <!-- Headings -->
+      <select class="tb-select" style="width:110px" onchange="formatHeading(this.value)" data-tip="Paragraph style">
+        <option value="p">Paragraph</option>
+        <option value="h1">Heading 1</option>
+        <option value="h2">Heading 2</option>
+        <option value="h3">Heading 3</option>
+        <option value="h4">Heading 4</option>
+        <option value="pre">Code</option>
+        <option value="blockquote">Quote</option>
+      </select>
+      <div class="toolbar-sep"></div>
+
+      <!-- Alignment -->
+      <button class="tb-btn" data-tip="Align Left" onclick="fmt('justifyLeft')">⬤◁</button>
+      <button class="tb-btn" data-tip="Center" onclick="fmt('justifyCenter')">⬛</button>
+      <button class="tb-btn" data-tip="Align Right" onclick="fmt('justifyRight')">▷⬤</button>
+      <button class="tb-btn" data-tip="Justify" onclick="fmt('justifyFull')">≡</button>
+      <div class="toolbar-sep"></div>
+
+      <!-- Lists -->
+      <button class="tb-btn" data-tip="Bullet List" onclick="fmt('insertUnorderedList')">• ≡</button>
+      <button class="tb-btn" data-tip="Numbered List" onclick="fmt('insertOrderedList')">1. ≡</button>
+      <button class="tb-btn" data-tip="Increase Indent" onclick="fmt('indent')">→|</button>
+      <button class="tb-btn" data-tip="Decrease Indent" onclick="fmt('outdent')">|←</button>
+      <div class="toolbar-sep"></div>
+
+      <!-- Colors -->
+      <button class="tb-btn" data-tip="Text Color" onclick="openModal('color-modal')" id="btn-color" style="font-weight:700; color: var(--accent)">A</button>
+      <button class="tb-btn" data-tip="Highlight" onclick="toggleHighlight()">🖊</button>
+      <div class="toolbar-sep"></div>
+
+      <!-- Special inserts -->
+      <button class="tb-btn" data-tip="Insert Equation" onclick="openModal('math-modal')" style="font-size:15px">∑</button>
+      <button class="tb-btn" data-tip="Insert Table" onclick="quickInsertTable()">⊞</button>
+      <button class="tb-btn" data-tip="Insert Image" onclick="insertImage()">🖼</button>
+      <button class="tb-btn" data-tip="Insert Link" onclick="insertLink()">🔗</button>
+      <button class="tb-btn" data-tip="Horizontal Rule" onclick="insertHR()">—</button>
+      <button class="tb-btn" data-tip="Insert Citation" onclick="openModal('citations-modal')">📖</button>
+      <div class="toolbar-sep"></div>
+
+      <!-- View -->
+      <button class="tb-btn" data-tip="Toggle Preview" onclick="togglePreview()" id="btn-preview">👁</button>
+      <button class="tb-btn" data-tip="Find & Replace" onclick="toggleFind()" id="btn-find">🔍</button>
+      <button class="tb-btn" data-tip="Word Count" onclick="showWordCount()">📊</button>
+    </div>
+
+    <!-- FIND BAR -->
+    <div id="findbar">
+      <span style="font-size:12px;color:var(--text-muted)">Find:</span>
+      <input type="text" id="find-input" placeholder="Search text…" oninput="findText()">
+      <span style="font-size:12px;color:var(--text-muted)">Replace:</span>
+      <input type="text" id="replace-input" placeholder="Replace with…">
+      <button class="btn btn-secondary btn-sm" onclick="replaceText()">Replace</button>
+      <button class="btn btn-secondary btn-sm" onclick="replaceAll()">Replace All</button>
+      <button class="btn btn-secondary btn-sm" onclick="toggleFind()">✕</button>
+    </div>
+
+    <!-- EDITOR + PREVIEW SPLIT -->
+    <div id="split-area">
+      <div id="editor-pane">
+        <div id="editor-label">
+          <span>✏️ EDITOR</span>
+          <span id="word-count">0 words</span>
+        </div>
+        <div id="editor" contenteditable="true" spellcheck="false" oninput="onEditorInput()" onkeyup="updateToolbarState()" onmouseup="updateToolbarState()"></div>
+      </div>
+      <div id="resizer"></div>
+      <div id="preview-pane">
+        <div id="preview-label">
+          <span>👁 PREVIEW (PDF Layout)</span>
+          <button class="btn btn-secondary btn-sm" onclick="compilePdf()" style="padding:2px 10px;font-size:11px">▶ Compile</button>
+        </div>
+        <div id="preview-scroll">
+          <div id="preview-page">
+            <p style="color:#aaa;text-align:center;font-style:italic">Click ▶ Compile or type to see the PDF preview here…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /body -->
+
+<!-- ══════════════════ STATUS BAR ══════════════════ -->
+<div id="statusbar">
+  <span><span class="dot"></span> Ready</span>
+  <span id="sb-words">Words: 0</span>
+  <span id="sb-chars">Chars: 0</span>
+  <span id="sb-lines">Lines: 0</span>
+  <span id="sb-saved" style="margin-left:auto;">Auto-saved ✓</span>
+</div>
+
+<!-- ══════════════════ MODALS ══════════════════ -->
+
+<!-- MATH MODAL -->
+<div class="modal-overlay hidden" id="math-modal">
+  <div class="modal">
+    <h2>∑ Insert Equation</h2>
+    <label>LaTeX Expression</label>
+    <input type="text" id="math-input" placeholder="e.g. \frac{d}{dx}\left(\int_a^x f(t)\,dt\right) = f(x)" oninput="previewMath()" />
+    <div id="math-preview-box">Preview will appear here…</div>
+    <label>Quick Symbols</label>
+    <div class="math-symbols" id="math-symbols-panel"></div>
+    <label>Equation Type</label>
+    <select id="math-type">
+      <option value="inline">Inline (within text)</option>
+      <option value="block">Block (centered, numbered)</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('math-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="insertMath()">Insert Equation</button>
+    </div>
+  </div>
+</div>
+
+<!-- CITATIONS MODAL -->
+<div class="modal-overlay hidden" id="citations-modal">
+  <div class="modal">
+    <h2>📚 References & Citations</h2>
+    <label>Citation Style</label>
+    <select id="cite-style">
+      <option value="apa">APA 7th Edition</option>
+      <option value="ieee">IEEE</option>
+      <option value="chicago">Chicago</option>
+      <option value="mla">MLA</option>
+      <option value="harvard">Harvard</option>
+    </select>
+    <label>Add New Reference</label>
+    <select id="ref-type" onchange="updateRefFields()">
+      <option value="article">Journal Article</option>
+      <option value="book">Book</option>
+      <option value="conference">Conference Paper</option>
+      <option value="website">Website</option>
+      <option value="thesis">Thesis/Dissertation</option>
+    </select>
+    <div id="ref-fields"></div>
+    <button class="btn btn-primary btn-sm" onclick="addReference()" style="margin-top:10px">+ Add Reference</button>
+    <label>Your References</label>
+    <div id="citations-list"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('citations-modal')">Close</button>
+      <button class="btn btn-green" onclick="insertBibliography()">Insert Bibliography</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD MODAL -->
+<div class="modal-overlay hidden" id="upload-modal">
+  <div class="modal">
+    <h2>📁 Import File</h2>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px">Upload a .zip template or a .docx file to edit it.</p>
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragleave="onDragLeave(event)">
+      <span class="upload-icon">📂</span>
+      <strong>Click to browse or drag & drop</strong><br>
+      <span style="font-size:12px">.zip templates · .docx files · .txt files</span>
+    </div>
+    <input type="file" id="file-input" accept=".zip,.docx,.txt,.doc" style="display:none" onchange="handleFileUpload(this)">
+    <div id="upload-status" style="margin-top:10px;font-size:13px;color:var(--accent-green)"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('upload-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay hidden" id="export-modal">
+  <div class="modal">
+    <h2>⬇ Export Document</h2>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Choose your export format:</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn btn-primary" onclick="exportDocx()" style="justify-content:flex-start;gap:12px;padding:12px 16px">
+        <span style="font-size:22px">📝</span>
+        <span><strong>Word Document (.docx)</strong><br><small style="font-weight:400;opacity:0.8">Editable in Microsoft Word &amp; Google Docs</small></span>
+      </button>
+      <button class="btn btn-secondary" onclick="exportPDF()" style="justify-content:flex-start;gap:12px;padding:12px 16px">
+        <span style="font-size:22px">📄</span>
+        <span><strong>PDF Document</strong><br><small style="font-weight:400;opacity:0.8">Print-ready, non-editable format</small></span>
+      </button>
+      <button class="btn btn-secondary" onclick="exportHTML()" style="justify-content:flex-start;gap:12px;padding:12px 16px">
+        <span style="font-size:22px">🌐</span>
+        <span><strong>HTML File</strong><br><small style="font-weight:400;opacity:0.8">For web publishing</small></span>
+      </button>
+      <button class="btn btn-secondary" onclick="exportTXT()" style="justify-content:flex-start;gap:12px;padding:12px 16px">
+        <span style="font-size:22px">📃</span>
+        <span><strong>Plain Text (.txt)</strong><br><small style="font-weight:400;opacity:0.8">Text only, no formatting</small></span>
+      </button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('export-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- COLOR MODAL -->
+<div class="modal-overlay hidden" id="color-modal">
+  <div class="modal" style="min-width:300px">
+    <h2>🎨 Text Color</h2>
+    <label>Preset Colors</label>
+    <div class="color-row">
+      <div class="color-swatch" style="background:#ffffff" onclick="applyColor('#ffffff')" title="White"></div>
+      <div class="color-swatch" style="background:#000000" onclick="applyColor('#000000')" title="Black"></div>
+      <div class="color-swatch" style="background:#e53935" onclick="applyColor('#e53935')" title="Red"></div>
+      <div class="color-swatch" style="background:#1e88e5" onclick="applyColor('#1e88e5')" title="Blue"></div>
+      <div class="color-swatch" style="background:#43a047" onclick="applyColor('#43a047')" title="Green"></div>
+      <div class="color-swatch" style="background:#fb8c00" onclick="applyColor('#fb8c00')" title="Orange"></div>
+      <div class="color-swatch" style="background:#8e24aa" onclick="applyColor('#8e24aa')" title="Purple"></div>
+      <div class="color-swatch" style="background:#00acc1" onclick="applyColor('#00acc1')" title="Cyan"></div>
+      <div class="color-swatch" style="background:#f9a825" onclick="applyColor('#f9a825')" title="Yellow"></div>
+      <div class="color-swatch" style="background:#f06292" onclick="applyColor('#f06292')" title="Pink"></div>
+      <div class="color-swatch" style="background:#4fc3f7" onclick="applyColor('#4fc3f7')" title="Sky"></div>
+      <div class="color-swatch" style="background:#aaa" onclick="applyColor('#aaaaaa')" title="Gray"></div>
+    </div>
+    <label>Custom Color</label>
+    <input type="color" id="custom-color" value="#ffffff" oninput="applyColor(this.value)" style="width:100%;height:40px;cursor:pointer;border-radius:6px">
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('color-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE MODAL -->
+<div class="modal-overlay hidden" id="page-modal">
+  <div class="modal">
+    <h2>📐 Page Layout</h2>
+    <label>Paper Size</label>
+    <select id="paper-size" onchange="updatePageSize()">
+      <option value="a4">A4 (210 × 297 mm)</option>
+      <option value="letter">US Letter (216 × 279 mm)</option>
+      <option value="a3">A3 (297 × 420 mm)</option>
+    </select>
+    <label>Orientation</label>
+    <select id="orientation" onchange="updatePageSize()">
+      <option value="portrait">Portrait</option>
+      <option value="landscape">Landscape</option>
+    </select>
+    <label>Margins</label>
+    <select id="margins" onchange="updateMargins()">
+      <option value="normal">Normal (25mm)</option>
+      <option value="narrow">Narrow (12mm)</option>
+      <option value="wide">Wide (38mm)</option>
+    </select>
+    <label>Columns</label>
+    <select id="columns" onchange="updateColumns()">
+      <option value="1">Single Column</option>
+      <option value="2">Two Columns</option>
+    </select>
+    <label>Line Spacing</label>
+    <select id="line-spacing" onchange="updateLineSpacing()">
+      <option value="1.0">Single (1.0)</option>
+      <option value="1.5" selected>1.5</option>
+      <option value="2.0">Double (2.0)</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('page-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('page-modal')">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ SCRIPTS ══════════════════ -->
+<script>
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+let citations = [];
+let citationCounter = 1;
+let previewVisible = true;
+let savedSelection = null;
+
+const editor = document.getElementById('editor');
+const previewPage = document.getElementById('preview-page');
+
+// ═══════════════════════════════════════
+//  MODAL HELPERS
+// ═══════════════════════════════════════
+function openModal(id) {
+  savedSelection = saveSelection();
+  document.getElementById(id).classList.remove('hidden');
+  if (id === 'math-modal') buildMathSymbols();
+  if (id === 'citations-modal') { updateRefFields(); renderCitations(); }
+}
+function closeModal(id) {
+  document.getElementById(id).classList.add('hidden');
+  if (savedSelection) { restoreSelection(savedSelection); editor.focus(); }
+}
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.add('hidden'); });
+});
+
+// ═══════════════════════════════════════
+//  FORMATTING
+// ═══════════════════════════════════════
+function fmt(cmd, val) { document.execCommand(cmd, false, val || null); editor.focus(); updateToolbarState(); }
+function execFont(f) { fmt('fontName', f); }
+function execFontSize(s) {
+  const sel = window.getSelection();
+  if (!sel.isCollapsed) {
+    const range = sel.getRangeAt(0);
+    const span = document.createElement('span');
+    span.style.fontSize = s + 'pt';
+    range.surroundContents(span);
+  }
+  editor.focus();
+}
+function formatHeading(tag) {
+  if (tag === 'blockquote') { fmt('formatBlock', 'blockquote'); }
+  else { fmt('formatBlock', tag); }
+  editor.focus();
+}
+
+function updateToolbarState() {
+  ['bold','italic','underline'].forEach(cmd => {
+    const btn = document.getElementById('btn-' + cmd);
+    if (btn) btn.classList.toggle('active', document.queryCommandState(cmd));
+  });
+  updateWordCount();
+}
+
+// ═══════════════════════════════════════
+//  COLORS
+// ═══════════════════════════════════════
+function applyColor(color) {
+  restoreSelection(savedSelection);
+  fmt('foreColor', color);
+  closeModal('color-modal');
+}
+function toggleHighlight() {
+  fmt('backColor', '#fff176');
+}
+
+// ═══════════════════════════════════════
+//  SELECTION SAVE/RESTORE
+// ═══════════════════════════════════════
+function saveSelection() {
+  const sel = window.getSelection();
+  if (sel.rangeCount > 0) return sel.getRangeAt(0).cloneRange();
+  return null;
+}
+function restoreSelection(range) {
+  if (!range) return;
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+// ═══════════════════════════════════════
+//  SPECIAL INSERTS
+// ═══════════════════════════════════════
+function insertHR() { fmt('insertHorizontalRule'); }
+
+function insertLink() {
+  const url = prompt('Enter URL:', 'https://');
+  if (url) fmt('createLink', url);
+}
+
+function insertFootnote() {
+  const text = prompt('Footnote text:');
+  if (!text) return;
+  const fnNum = document.querySelectorAll('.footnote-ref').length + 1;
+  const html = `<sup class="footnote-ref" style="color:var(--accent);cursor:pointer" title="${text}">[${fnNum}]</sup>`;
+  fmt('insertHTML', html);
+}
+
+function insertCode() {
+  fmt('insertHTML', '<pre><code>// Your code here\n</code></pre><p></p>');
+}
+
+function insertTOC() {
+  const headings = editor.querySelectorAll('h1,h2,h3');
+  if (headings.length === 0) { alert('No headings found. Add headings first.'); return; }
+  let toc = '<div class="toc" style="border:1px solid #ccc;padding:16px;margin:16px 0;border-radius:6px"><strong>Table of Contents</strong><ol style="margin-top:8px">';
+  headings.forEach((h, i) => {
+    const level = parseInt(h.tagName[1]);
+    const indent = (level - 1) * 20;
+    toc += `<li style="margin-left:${indent}px">${h.innerText}</li>`;
+  });
+  toc += '</ol></div><p></p>';
+  fmt('insertHTML', toc);
+}
+
+function quickInsertTable() {
+  insertTable(3, 3);
+}
+
+function insertTable(rows = 3, cols = 3) {
+  let t = '<table style="width:100%;border-collapse:collapse;margin:1em 0">';
+  t += '<tr>' + Array(cols).fill(0).map((_, i) => `<th style="border:1px solid #ccc;padding:8px;background:#f0f0f0">Header ${i+1}</th>`).join('') + '</tr>';
+  for (let r = 0; r < rows - 1; r++) {
+    t += '<tr>' + Array(cols).fill(0).map((_, i) => `<td style="border:1px solid #ccc;padding:8px">Cell</td>`).join('') + '</tr>';
+  }
+  t += '</table><p></p>';
+  fmt('insertHTML', t);
+}
+
+function insertImage() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      fmt('insertHTML', `<img src="${ev.target.result}" style="max-width:100%;height:auto;margin:8px 0;border-radius:4px" alt="${file.name}">`);
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+// ═══════════════════════════════════════
+//  MATH / EQUATIONS
+// ═══════════════════════════════════════
+const mathSymbols = [
+  ['\\frac{a}{b}','Fraction'],['\\sqrt{x}','Sqrt'],['\\sum_{i=0}^{n}','Sum'],
+  ['\\int_a^b','Integral'],['\\prod_{i=1}^n','Product'],['\\lim_{x \\to 0}','Limit'],
+  ['\\partial','Partial'],['\\nabla','Nabla'],['\\infty','Infinity'],
+  ['\\alpha','α'],['\\beta','β'],['\\gamma','γ'],['\\delta','δ'],
+  ['\\theta','θ'],['\\lambda','λ'],['\\mu','μ'],['\\pi','π'],
+  ['\\sigma','σ'],['\\omega','ω'],['\\Omega','Ω'],['\\Delta','Δ'],
+  ['\\times','×'],['\\div','÷'],['\\pm','±'],['\\leq','≤'],
+  ['\\geq','≥'],['\\neq','≠'],['\\approx','≈'],['\\equiv','≡'],
+  ['\\vec{v}','Vector'],['\\hat{x}','Hat'],['\\bar{x}','Bar'],
+  ['\\begin{matrix}a&b\\\\c&d\\end{matrix}','Matrix'],
+  ['\\binom{n}{k}','Binomial'],['\\left(\\frac{x}{y}\\right)','Parens'],
+  ['e^{i\\pi}+1=0','Euler']
+];
+
+function buildMathSymbols() {
+  const panel = document.getElementById('math-symbols-panel');
+  panel.innerHTML = '';
+  mathSymbols.forEach(([latex, label]) => {
+    const btn = document.createElement('button');
+    btn.className = 'math-sym-btn';
+    btn.textContent = label;
+    btn.title = latex;
+    btn.onclick = () => {
+      const inp = document.getElementById('math-input');
+      inp.value += latex + ' ';
+      previewMath();
+    };
+    panel.appendChild(btn);
+  });
+}
+
+function previewMath() {
+  const val = document.getElementById('math-input').value;
+  const box = document.getElementById('math-preview-box');
+  box.innerHTML = `\\(${val}\\)`;
+  if (window.MathJax) MathJax.typesetPromise([box]).catch(console.error);
+}
+
+function insertMath() {
+  const latex = document.getElementById('math-input').value.trim();
+  if (!latex) return;
+  const type = document.getElementById('math-type').value;
+  let html;
+  if (type === 'inline') {
+    html = `<span class="math-inline" style="font-style:italic;color:inherit">\\(${latex}\\)</span>`;
+  } else {
+    html = `<div class="math-block" style="text-align:center;padding:12px;margin:1em 0;border:1px solid #ddd;border-radius:4px">\\[${latex}\\]</div>`;
+  }
+  restoreSelection(savedSelection);
+  editor.focus();
+  fmt('insertHTML', html);
+  closeModal('math-modal');
+  document.getElementById('math-input').value = '';
+  if (window.MathJax) MathJax.typesetPromise([editor]).catch(console.error);
+}
+
+// ═══════════════════════════════════════
+//  CITATIONS
+// ═══════════════════════════════════════
+const refFieldDefs = {
+  article: [
+    {id:'ref-author',label:'Author(s)',ph:'Last, F. M.'},
+    {id:'ref-year',label:'Year',ph:'2024'},
+    {id:'ref-title',label:'Article Title',ph:'Title of the article'},
+    {id:'ref-journal',label:'Journal Name',ph:'Journal of Science'},
+    {id:'ref-volume',label:'Volume(Issue)',ph:'12(3)'},
+    {id:'ref-pages',label:'Pages',ph:'45–67'},
+    {id:'ref-doi',label:'DOI',ph:'10.xxxx/xxxxx'},
+  ],
+  book: [
+    {id:'ref-author',label:'Author(s)',ph:'Last, F. M.'},
+    {id:'ref-year',label:'Year',ph:'2024'},
+    {id:'ref-title',label:'Book Title',ph:'Title of the book'},
+    {id:'ref-publisher',label:'Publisher',ph:'Publisher Name'},
+    {id:'ref-city',label:'City',ph:'New York, NY'},
+  ],
+  conference: [
+    {id:'ref-author',label:'Author(s)',ph:'Last, F. M.'},
+    {id:'ref-year',label:'Year',ph:'2024'},
+    {id:'ref-title',label:'Paper Title',ph:'Title of the paper'},
+    {id:'ref-conf',label:'Conference Name',ph:'Proceedings of…'},
+    {id:'ref-pages',label:'Pages',ph:'45–67'},
+  ],
+  website: [
+    {id:'ref-author',label:'Author/Organization',ph:'Author Name'},
+    {id:'ref-year',label:'Year',ph:'2024'},
+    {id:'ref-title',label:'Page Title',ph:'Title of webpage'},
+    {id:'ref-url',label:'URL',ph:'https://…'},
+    {id:'ref-accessed',label:'Accessed Date',ph:'January 1, 2024'},
+  ],
+  thesis: [
+    {id:'ref-author',label:'Author',ph:'Last, F. M.'},
+    {id:'ref-year',label:'Year',ph:'2024'},
+    {id:'ref-title',label:'Thesis Title',ph:'Title of thesis'},
+    {id:'ref-degree',label:'Degree',ph:'PhD dissertation / Master\'s thesis'},
+    {id:'ref-university',label:'University',ph:'University Name'},
+  ],
+};
+
+function updateRefFields() {
+  const type = document.getElementById('ref-type').value;
+  const fields = refFieldDefs[type] || [];
+  const container = document.getElementById('ref-fields');
+  container.innerHTML = fields.map(f =>
+    `<label>${f.label}</label><input type="text" id="${f.id}" placeholder="${f.ph}">`
+  ).join('');
+}
+
+function getFieldVal(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function formatCitation(ref, style, num) {
+  const { type, author, year, title } = ref;
+  if (style === 'apa') {
+    if (type === 'article') return `${author} (${year}). ${title}. <em>${ref.journal}</em>, <em>${ref.volume}</em>, ${ref.pages}. ${ref.doi ? 'https://doi.org/' + ref.doi : ''}`;
+    if (type === 'book') return `${author} (${year}). <em>${title}</em>. ${ref.publisher}.`;
+    if (type === 'website') return `${author} (${year}). <em>${title}</em>. ${ref.url}`;
+    return `${author} (${year}). ${title}.`;
+  }
+  if (style === 'ieee') {
+    return `[${num}] ${author}, "${title}," ${ref.journal || ref.conf || ''}, ${year}.`;
+  }
+  if (style === 'mla') {
+    return `${author}. "${title}." <em>${ref.journal || ref.publisher || ''}</em>, ${year}.`;
+  }
+  return `${author} (${year}). ${title}.`;
+}
+
+function addReference() {
+  const type = document.getElementById('ref-type').value;
+  const style = document.getElementById('cite-style').value;
+  const ref = {
+    type,
+    author: getFieldVal('ref-author'),
+    year: getFieldVal('ref-year'),
+    title: getFieldVal('ref-title'),
+    journal: getFieldVal('ref-journal'),
+    volume: getFieldVal('ref-volume'),
+    pages: getFieldVal('ref-pages'),
+    doi: getFieldVal('ref-doi'),
+    publisher: getFieldVal('ref-publisher'),
+    conf: getFieldVal('ref-conf'),
+    url: getFieldVal('ref-url'),
+  };
+  if (!ref.author && !ref.title) { alert('Please fill in at least Author and Title.'); return; }
+  ref.formatted = formatCitation(ref, style, citations.length + 1);
+  citations.push(ref);
+  renderCitations();
+}
+
+function renderCitations() {
+  const list = document.getElementById('citations-list');
+  if (citations.length === 0) {
+    list.innerHTML = '<p style="font-size:12px;color:var(--text-muted);text-align:center;padding:16px">No references added yet.</p>';
+    return;
+  }
+  list.innerHTML = citations.map((c, i) => `
+    <div class="citation-item">
+      <span class="cite-num">[${i+1}]</span>
+      <div class="cite-text">${c.formatted}</div>
+      <div class="cite-actions">
+        <button class="btn btn-secondary btn-sm" onclick="insertCiteRef(${i})">Cite</button>
+        <button class="btn btn-secondary btn-sm" onclick="deleteCite(${i})" style="color:#f48fb1">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function insertCiteRef(i) {
+  restoreSelection(savedSelection);
+  editor.focus();
+  fmt('insertHTML', `<sup style="color:#1e88e5;cursor:pointer" title="${citations[i].author}">[${i+1}]</sup>`);
+  closeModal('citations-modal');
+}
+
+function deleteCite(i) {
+  citations.splice(i, 1);
+  renderCitations();
+}
+
+function insertBibliography() {
+  if (citations.length === 0) { alert('No references to insert.'); return; }
+  const style = document.getElementById('cite-style').value;
+  let html = '<div style="margin-top:2em;border-top:2px solid #333;padding-top:1em"><h2>References</h2><ol style="padding-left:1.5em">';
+  citations.forEach(c => { html += `<li style="margin-bottom:8px">${c.formatted}</li>`; });
+  html += '</ol></div>';
+  restoreSelection(savedSelection);
+  editor.focus();
+  fmt('insertHTML', html);
+  closeModal('citations-modal');
+}
+
+// ═══════════════════════════════════════
+//  TEMPLATES
+// ═══════════════════════════════════════
+const templates = {
+  research: `<h1>Research Paper Title</h1>
+<p><strong>Author Name</strong><br>Department, University Name<br>email@university.edu</p>
+<h2>Abstract</h2>
+<p>This paper investigates... [Write your abstract here, 150–250 words]</p>
+<p><strong>Keywords:</strong> keyword1, keyword2, keyword3</p>
+<h2>1. Introduction</h2>
+<p>The study of [topic] is fundamental to understanding [field]. Previous research by [Author, Year] has shown that...</p>
+<p>The main contributions of this paper are:</p>
+<ul><li>First contribution</li><li>Second contribution</li><li>Third contribution</li></ul>
+<h2>2. Literature Review</h2>
+<p>Several studies have addressed this problem. [Author (Year)] proposed a method for...</p>
+<h2>3. Methodology</h2>
+<p>Our approach is based on the following mathematical formulation:</p>
+<div class="math-block" style="text-align:center;padding:12px;margin:1em 0;border:1px solid #ddd;border-radius:4px">\\[f(x) = \\int_{-\\infty}^{\\infty} \\hat{f}(\\xi)\\,e^{2\\pi i \\xi x}\\,d\\xi\\]</div>
+<h2>4. Results</h2>
+<p>Table 1 shows the experimental results:</p>
+<table style="width:100%;border-collapse:collapse;margin:1em 0"><tr><th style="border:1px solid #ccc;padding:8px;background:#f0f0f0">Method</th><th style="border:1px solid #ccc;padding:8px;background:#f0f0f0">Accuracy</th><th style="border:1px solid #ccc;padding:8px;background:#f0f0f0">Time (ms)</th></tr><tr><td style="border:1px solid #ccc;padding:8px">Baseline</td><td style="border:1px solid #ccc;padding:8px">85.2%</td><td style="border:1px solid #ccc;padding:8px">120</td></tr><tr><td style="border:1px solid #ccc;padding:8px">Proposed</td><td style="border:1px solid #ccc;padding:8px">92.7%</td><td style="border:1px solid #ccc;padding:8px">98</td></tr></table>
+<h2>5. Discussion</h2>
+<p>The results demonstrate that our approach outperforms the baseline by...</p>
+<h2>6. Conclusion</h2>
+<p>This paper presented a novel approach to [problem]. The proposed method achieves...</p>
+<h2>References</h2>
+<ol><li>Author, A. (2024). Title of paper. <em>Journal Name</em>, <em>12</em>(3), 45–67.</li><li>Author, B., &amp; Author, C. (2023). <em>Book Title</em>. Publisher.</li></ol>`,
+
+  thesis: `<h1>Thesis Title</h1>
+<p style="text-align:center"><em>A Dissertation Submitted in Partial Fulfillment<br>of the Requirements for the Degree of<br><strong>Doctor of Philosophy</strong></em><br><br>By<br><strong>Your Full Name</strong><br><br>Department of [Department]<br>[University Name]<br>[Month, Year]</p>
+<h2>Abstract</h2>
+<p>[Abstract text, 300–500 words]</p>
+<h2>Acknowledgements</h2>
+<p>I would like to express my sincere gratitude to my advisor, Prof. [Name], for...</p>
+<h2>Table of Contents</h2>
+<p>[Auto-generated – use Insert → Table of Contents]</p>
+<h2>Chapter 1: Introduction</h2>
+<h3>1.1 Background</h3>
+<p>...</p>
+<h3>1.2 Problem Statement</h3>
+<p>...</p>
+<h3>1.3 Research Objectives</h3>
+<p>...</p>
+<h2>Chapter 2: Literature Review</h2>
+<p>...</p>
+<h2>Chapter 3: Methodology</h2>
+<p>...</p>
+<h2>Chapter 4: Results and Analysis</h2>
+<p>...</p>
+<h2>Chapter 5: Conclusion</h2>
+<p>...</p>
+<h2>References</h2>
+<p>...</p>
+<h2>Appendices</h2>
+<p>...</p>`,
+
+  report: `<h1>University Report Title</h1>
+<p><strong>Course:</strong> [Course Name &amp; Code]<br><strong>Student:</strong> [Your Name] – [Student ID]<br><strong>Instructor:</strong> Dr. [Instructor Name]<br><strong>Date:</strong> [Submission Date]</p>
+<h2>Executive Summary</h2>
+<p>[Brief overview of the report, 150–200 words]</p>
+<h2>1. Introduction</h2>
+<p>This report examines...</p>
+<h2>2. Background</h2>
+<p>...</p>
+<h2>3. Analysis</h2>
+<p>The data can be represented by:</p>
+<div class="math-block" style="text-align:center;padding:12px;margin:1em 0;border:1px solid #ddd;border-radius:4px">\\[\\bar{x} = \\frac{1}{n}\\sum_{i=1}^{n} x_i\\]</div>
+<h2>4. Findings</h2>
+<p>...</p>
+<h2>5. Recommendations</h2>
+<ul><li>Recommendation 1</li><li>Recommendation 2</li></ul>
+<h2>6. Conclusion</h2>
+<p>...</p>
+<h2>References</h2>
+<p>...</p>`,
+
+  cv: `<h1>Your Full Name</h1>
+<p style="text-align:center">📧 email@university.edu &nbsp;|&nbsp; 📞 +1 (555) 000-0000 &nbsp;|&nbsp; 🌐 linkedin.com/in/yourprofile &nbsp;|&nbsp; 📍 City, Country</p>
+<hr>
+<h2>Education</h2>
+<p><strong>Ph.D. in [Field]</strong> – Expected [Year]<br>[University Name], [City, Country]<br>Thesis: "[Thesis Title]" | Advisor: Prof. [Name]</p>
+<p><strong>B.Sc. in [Field]</strong> – [Year]<br>[University Name], [City, Country] | GPA: X.X/4.0</p>
+<h2>Research Interests</h2>
+<p>Topic A · Topic B · Topic C · Topic D</p>
+<h2>Publications</h2>
+<ol><li>Your Name, Co-Author. (2024). "Paper Title." <em>Journal Name</em>, 12(3), 45–67. DOI: 10.xxxx</li></ol>
+<h2>Research Experience</h2>
+<p><strong>Graduate Research Assistant</strong> – [Lab/Group Name] | [Year–Present]<br>• Developed [methodology/tool/model]<br>• Published [n] papers in [field]</p>
+<h2>Teaching Experience</h2>
+<p><strong>Teaching Assistant</strong> – [Course Name] | [University], [Year]</p>
+<h2>Awards &amp; Honors</h2>
+<ul><li>[Award Name] – [Institution], [Year]</li></ul>
+<h2>Technical Skills</h2>
+<p><strong>Programming:</strong> Python, MATLAB, R, C++<br><strong>Tools:</strong> LaTeX, SPSS, TensorFlow<br><strong>Languages:</strong> English (Fluent), Arabic (Native)</p>
+<h2>References</h2>
+<p>Available upon request.</p>`,
+
+  letter: `<p style="text-align:right">[Your Name]<br>[Your Address]<br>[City, Country]<br>[Date]</p>
+<p><strong>[Recipient Name]</strong><br>[Title]<br>[Institution/Company]<br>[Address]</p>
+<p>Dear [Dr./Prof./Mr./Ms.] [Last Name],</p>
+<p>I am writing to express my strong interest in the [Position/Program] at [Institution]. Having reviewed the requirements and your group's research in [area], I am confident that my background in [your field] makes me a strong candidate.</p>
+<p>During my [degree] at [University], I focused on [research area], where I [key achievement]. My work resulted in [outcome, e.g., a publication in X journal / award / project].</p>
+<p>Specifically, I am drawn to your work on [specific topic from their research], which aligns closely with my interest in [your interest]. I believe that [specific reason you are a good fit].</p>
+<p>I have attached my CV and transcript for your review. I would welcome the opportunity to discuss how my background and skills can contribute to your group.</p>
+<p>Thank you for your time and consideration.</p>
+<p>Sincerely,<br><br>[Your Full Name]<br>[Your Email]<br>[Your Phone]</p>`,
+
+  blank: `<p></p>`,
+};
+
+function loadTemplate(name) {
+  if (editor.innerText.trim().length > 10) {
+    if (!confirm('This will replace your current document. Continue?')) return;
+  }
+  editor.innerHTML = templates[name] || templates.blank;
+  if (window.MathJax) MathJax.typesetPromise([editor]).catch(console.error);
+  updateWordCount();
+  autoSave();
+}
+
+// ═══════════════════════════════════════
+//  COMPILE / PREVIEW
+// ═══════════════════════════════════════
+let compileTimer = null;
+function onEditorInput() {
+  updateWordCount();
+  clearTimeout(compileTimer);
+  compileTimer = setTimeout(compilePdf, 1500);
+  autoSave();
+}
+
+function compilePdf() {
+  const html = editor.innerHTML;
+  previewPage.innerHTML = html;
+  if (window.MathJax) MathJax.typesetPromise([previewPage]).catch(console.error);
+}
+
+function togglePreview() {
+  const pane = document.getElementById('preview-pane');
+  const resizer = document.getElementById('resizer');
+  previewVisible = !previewVisible;
+  pane.style.display = previewVisible ? 'flex' : 'none';
+  resizer.style.display = previewVisible ? 'block' : 'none';
+  document.getElementById('btn-preview').classList.toggle('active', previewVisible);
+}
+
+// ═══════════════════════════════════════
+//  WORD COUNT
+// ═══════════════════════════════════════
+function updateWordCount() {
+  const text = editor.innerText || '';
+  const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
+  const chars = text.length;
+  const lines = text.split('\n').length;
+  document.getElementById('word-count').textContent = `${words} words`;
+  document.getElementById('sb-words').textContent = `Words: ${words}`;
+  document.getElementById('sb-chars').textContent = `Chars: ${chars}`;
+  document.getElementById('sb-lines').textContent = `Lines: ${lines}`;
+}
+
+function showWordCount() {
+  const text = editor.innerText || '';
+  const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
+  alert(`📊 Document Statistics\n\nWords: ${words}\nCharacters: ${text.length}\nLines: ${text.split('\n').length}\nParagraphs: ${editor.querySelectorAll('p,h1,h2,h3,h4').length}`);
+}
+
+// ═══════════════════════════════════════
+//  FIND & REPLACE
+// ═══════════════════════════════════════
+function toggleFind() {
+  const bar = document.getElementById('findbar');
+  bar.classList.toggle('visible');
+  if (bar.classList.contains('visible')) document.getElementById('find-input').focus();
+}
+function findText() {
+  const q = document.getElementById('find-input').value;
+  if (!q) return;
+  window.find(q);
+}
+function replaceText() {
+  const find = document.getElementById('find-input').value;
+  const rep = document.getElementById('replace-input').value;
+  if (!find) return;
+  const html = editor.innerHTML.replace(find, rep);
+  editor.innerHTML = html;
+}
+function replaceAll() {
+  const find = document.getElementById('find-input').value;
+  const rep = document.getElementById('replace-input').value;
+  if (!find) return;
+  const regex = new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+  editor.innerHTML = editor.innerHTML.replace(regex, rep);
+}
+
+// ═══════════════════════════════════════
+//  PAGE SETTINGS
+// ═══════════════════════════════════════
+function updatePageSize() {
+  const size = document.getElementById('paper-size').value;
+  const orient = document.getElementById('orientation').value;
+  const page = document.getElementById('preview-page');
+  const sizes = { a4: [210, 297], letter: [216, 279], a3: [297, 420] };
+  let [w, h] = sizes[size] || [210, 297];
+  if (orient === 'landscape') [w, h] = [h, w];
+  page.style.width = w + 'mm';
+  page.style.minHeight = h + 'mm';
+}
+function updateMargins() {
+  const m = document.getElementById('margins').value;
+  const margins = { normal: '25mm', narrow: '12mm', wide: '38mm' };
+  document.getElementById('preview-page').style.padding = margins[m] || '25mm';
+}
+function updateColumns() {
+  const cols = document.getElementById('columns').value;
+  document.getElementById('preview-page').style.columnCount = cols;
+}
+function updateLineSpacing() {
+  const ls = document.getElementById('line-spacing').value;
+  editor.style.lineHeight = ls * 1.5;
+  document.getElementById('preview-page').style.lineHeight = ls * 1.5;
+}
+
+// ═══════════════════════════════════════
+//  SPELLCHECK
+// ═══════════════════════════════════════
+let spellOn = false;
+function toggleSpellcheck() {
+  spellOn = !spellOn;
+  editor.setAttribute('spellcheck', spellOn);
+  editor.focus();
+}
+
+// ═══════════════════════════════════════
+//  EXPORT
+// ═══════════════════════════════════════
+function exportHTML() {
+  const title = document.getElementById('doc-title-input').value || 'document';
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"><\/script>
+<style>body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.6;max-width:210mm;margin:auto;padding:25mm 20mm;color:#1a1a1a}h1{font-size:18pt;border-bottom:1pt solid #333;padding-bottom:4pt}h2{font-size:14pt}table{border-collapse:collapse;width:100%}td,th{border:1pt solid #999;padding:4pt 8pt}</style>
+</head><body>${editor.innerHTML}</body></html>`;
+  download(title + '.html', html, 'text/html');
+}
+
+function exportTXT() {
+  const title = document.getElementById('doc-title-input').value || 'document';
+  download(title + '.txt', editor.innerText, 'text/plain');
+}
+
+function exportDocx() {
+  // Use docx.js via CDN
+  const title = document.getElementById('doc-title-input').value || 'document';
+  // Simple approach: create a Word-compatible HTML wrapped file
+  const wordHTML = `<html xmlns:o='urn:schemas-microsoft-com:office:office'
+xmlns:w='urn:schemas-microsoft-com:office:word'
+xmlns='http://www.w3.org/TR/REC-html40'>
+<head><meta charset='utf-8'><title>${title}</title>
+<style>
+  body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.6; }
+  h1 { font-size: 18pt; } h2 { font-size: 14pt; } h3 { font-size: 12pt; font-weight: bold; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { border: 1pt solid #999; padding: 4pt 8pt; }
+</style>
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->
+</head><body>${editor.innerHTML}</body></html>`;
+  const blob = new Blob([wordHTML], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = title + '.docx';
+  a.click();
+  URL.revokeObjectURL(url);
+  closeModal('export-modal');
+}
+
+function exportPDF() {
+  closeModal('export-modal');
+  compilePdf();
+  setTimeout(() => {
+    const { jsPDF } = window.jspdf;
+    const page = document.getElementById('preview-page');
+    html2canvas(page, { scale: 2, useCORS: true, backgroundColor: '#ffffff' }).then(canvas => {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfW = pdf.internal.pageSize.getWidth();
+      const pdfH = (canvas.height * pdfW) / canvas.width;
+      let y = 0;
+      const pageH = pdf.internal.pageSize.getHeight();
+      while (y < pdfH) {
+        if (y > 0) pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, -y, pdfW, pdfH);
+        y += pageH;
+      }
+      const title = document.getElementById('doc-title-input').value || 'document';
+      pdf.save(title + '.pdf');
+    });
+  }, 500);
+}
+
+function download(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+  closeModal('export-modal');
+}
+
+// ═══════════════════════════════════════
+//  IMPORT (ZIP / DOCX)
+// ═══════════════════════════════════════
+function handleFileUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const status = document.getElementById('upload-status');
+  status.textContent = '⏳ Processing file…';
+
+  if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      mammoth.convertToHtml({ arrayBuffer: e.target.result }).then(result => {
+        if (editor.innerText.trim().length > 10) {
+          if (!confirm('Replace current document with imported file?')) return;
+        }
+        editor.innerHTML = result.value;
+        document.getElementById('doc-title-input').value = file.name.replace(/\.(docx|doc)$/, '');
+        status.textContent = '✅ DOCX imported successfully!';
+        if (window.MathJax) MathJax.typesetPromise([editor]).catch(console.error);
+        updateWordCount();
+        autoSave();
+      }).catch(err => { status.textContent = '❌ Error: ' + err.message; });
+    };
+    reader.readAsArrayBuffer(file);
+
+  } else if (file.name.endsWith('.zip')) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      JSZip.loadAsync(e.target.result).then(zip => {
+        const files = Object.keys(zip.files);
+        // Look for HTML, text, or document files in the zip
+        const htmlFile = files.find(f => f.endsWith('.html') || f.endsWith('.htm'));
+        const txtFile = files.find(f => f.endsWith('.txt'));
+        const docFile = files.find(f => f.endsWith('.docx'));
+        status.textContent = `✅ ZIP loaded! Files: ${files.join(', ')}`;
+
+        if (htmlFile) {
+          zip.files[htmlFile].async('text').then(content => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(content, 'text/html');
+            editor.innerHTML = doc.body.innerHTML;
+            document.getElementById('doc-title-input').value = file.name.replace('.zip', '');
+            status.textContent = '✅ Template loaded from ZIP!';
+            updateWordCount();
+          });
+        } else if (txtFile) {
+          zip.files[txtFile].async('text').then(content => {
+            editor.innerHTML = content.split('\n').map(l => `<p>${l || '&nbsp;'}</p>`).join('');
+            status.textContent = '✅ Text loaded from ZIP!';
+            updateWordCount();
+          });
+        } else {
+          // List files in editor
+          editor.innerHTML = `<h2>ZIP Template: ${file.name}</h2><p>Files found in this ZIP:</p><ul>${files.map(f => `<li>${f}</li>`).join('')}</ul><p>Select a file to open or start writing below:</p>`;
+          status.textContent = `✅ ZIP opened – ${files.length} files found.`;
+        }
+      }).catch(err => { status.textContent = '❌ Error reading ZIP: ' + err.message; });
+    };
+    reader.readAsArrayBuffer(file);
+
+  } else if (file.name.endsWith('.txt')) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      editor.innerHTML = e.target.result.split('\n').map(l => `<p>${l || '&nbsp;'}</p>`).join('');
+      status.textContent = '✅ Text file imported!';
+      updateWordCount();
+    };
+    reader.readAsText(file);
+  } else {
+    status.textContent = '⚠️ Supported formats: .docx, .zip, .txt';
+  }
+}
+
+function onDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('drag-over'); }
+function onDragLeave() { document.getElementById('upload-zone').classList.remove('drag-over'); }
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    document.getElementById('file-input').files = e.dataTransfer.files;
+    handleFileUpload(document.getElementById('file-input'));
+  }
+}
+
+// ═══════════════════════════════════════
+//  AUTO SAVE (localStorage)
+// ═══════════════════════════════════════
+let saveTimer = null;
+function autoSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem('scholeditor_content', editor.innerHTML);
+      localStorage.setItem('scholeditor_title', document.getElementById('doc-title-input').value);
+      localStorage.setItem('scholeditor_saved', new Date().toLocaleTimeString());
+      document.getElementById('sb-saved').textContent = 'Auto-saved ✓ ' + new Date().toLocaleTimeString();
+    } catch(e) {}
+  }, 800);
+}
+
+function loadSaved() {
+  try {
+    const saved = localStorage.getItem('scholeditor_content');
+    const title = localStorage.getItem('scholeditor_title');
+    if (saved && saved.length > 10) {
+      editor.innerHTML = saved;
+      if (title) document.getElementById('doc-title-input').value = title;
+      document.getElementById('sb-saved').textContent = 'Restored ✓';
+      if (window.MathJax) MathJax.typesetPromise([editor]).catch(console.error);
+      updateWordCount();
+    }
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════
+//  RESIZER
+// ═══════════════════════════════════════
+(function() {
+  const resizer = document.getElementById('resizer');
+  const editorPane = document.getElementById('editor-pane');
+  const previewPane = document.getElementById('preview-pane');
+  let dragging = false, startX, startEW, startPW;
+
+  resizer.addEventListener('mousedown', e => {
+    dragging = true;
+    startX = e.clientX;
+    startEW = editorPane.offsetWidth;
+    startPW = previewPane.offsetWidth;
+    resizer.classList.add('dragging');
+    document.body.style.userSelect = 'none';
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    editorPane.style.flex = 'none';
+    editorPane.style.width = Math.max(200, startEW + dx) + 'px';
+    previewPane.style.flex = '1';
+  });
+  document.addEventListener('mouseup', () => {
+    dragging = false;
+    resizer.classList.remove('dragging');
+    document.body.style.userSelect = '';
+  });
+})();
+
+// ═══════════════════════════════════════
+//  KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey)) {
+    if (e.key === 's') { e.preventDefault(); autoSave(); }
+    if (e.key === 'k') { e.preventDefault(); insertLink(); }
+    if (e.key === 'e') { e.preventDefault(); openModal('math-modal'); }
+    if (e.key === 'f') { e.preventDefault(); toggleFind(); }
+    if (e.shiftKey && e.key === 'P') { e.preventDefault(); compilePdf(); }
+  }
+});
+
+// ═══════════════════════════════════════
+//  SIDEBAR NAVIGATION
+// ═══════════════════════════════════════
+function showPanel(panel) {
+  document.querySelectorAll('.sidebar-item[id^=nav-]').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav-' + panel)?.classList.add('active');
+}
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+window.addEventListener('load', () => {
+  loadSaved();
+  updateRefFields();
+  updateWordCount();
+  // Load research template on first visit
+  if (!localStorage.getItem('scholeditor_content')) {
+    loadTemplate('research');
+  }
+});
+
+// MathJax config
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']], packages: {'[+]': ['ams']} },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] },
+  startup: { ready() { MathJax.startup.defaultReady(); MathJax.typesetPromise([document.getElementById('editor')]); } }
+};
+</script>
+</body>
+</html>
