@@ -9,7 +9,19 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']], packages: {'[+]': ['ams']} },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/stex/stex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
 <style>
 :root {
   --bg-dark: #1a1a2e;
@@ -567,6 +579,66 @@ body {
   background: var(--bg-editor);
 }
 .table-cell-pick.hover { background: rgba(79,195,247,0.4); border-color: var(--accent); }
+
+/* ══════════ LATEX MODE ══════════ */
+#wysiwyg-wrap { flex: 1; display: block; min-height: 0; overflow: hidden; }
+#wysiwyg-wrap #editor { height: 100%; }
+#latex-wrap { flex: 1; display: none; flex-direction: column; min-height: 0; background: var(--bg-editor); }
+#cm-host { flex: 1; min-height: 0; overflow: hidden; position: relative; }
+#cm-host .CodeMirror { height: 100% !important; font-family: 'Mono','SF Mono',Menlo,Consolas,monospace; font-size: 13px; line-height: 1.6; }
+#latex-source { width: 100%; height: 100%; border: 0; resize: none; background: var(--bg-editor);
+  color: #c8d0e0; font-family: Menlo,Consolas,monospace; font-size: 13px; padding: 12px 16px; outline: none; }
+
+.mode-switch { display: flex; gap: 4px; }
+.mode-btn { background: transparent; border: 1px solid var(--border-light); color: var(--text-muted);
+  font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 5px; cursor: pointer;
+  font-family: inherit; letter-spacing: .3px; transition: all .15s; }
+.mode-btn:hover { color: var(--text-primary); border-color: var(--accent); }
+.mode-btn.active { background: var(--accent); color: #0b1020; border-color: var(--accent); }
+
+#tex-actions { display: none; gap: 6px; align-items: center; padding: 6px 10px;
+  background: var(--bg-panel); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+#tex-stats { margin-left: auto; font-size: 11px; color: var(--text-muted); }
+
+.btn-overleaf { background: #138a07; color: #fff; border-color: #138a07; }
+.btn-overleaf:hover { background: #0f6e05; border-color: #0f6e05; }
+
+/* ══════════ COMPILE LOG ══════════ */
+#log-pane { border-top: 1px solid var(--border); background: var(--bg-panel); flex-shrink: 0; }
+#log-head { display: flex; align-items: center; gap: 10px; padding: 5px 12px; }
+#log-body { display: none; max-height: 180px; overflow-y: auto; padding: 8px 12px 12px;
+  font-family: Menlo,Consolas,monospace; font-size: 11.5px; line-height: 1.7; }
+#log-pane.open #log-body { display: block; }
+.compile-badge { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 10px; }
+.compile-badge.ok { background: rgba(76,175,147,.18); color: #6fdfc0; }
+.compile-badge.bad { background: rgba(244,143,177,.18); color: #f48fb1; }
+.log-error, .log-warn, .log-info, .log-ok { display: flex; gap: 8px; align-items: baseline; padding: 1px 0; }
+.log-error { color: #f48fb1; } .log-warn { color: #ffcc80; }
+.log-info { color: var(--text-muted); } .log-ok { color: #6fdfc0; }
+.log-tag { font-weight: 700; font-size: 9.5px; letter-spacing: .5px; min-width: 42px; }
+.log-line { color: var(--accent); min-width: 56px; }
+
+/* ══════════ LATEX PREVIEW ══════════ */
+.tex-doc { font-family: 'Times New Roman', Georgia, serif; color: #1a1a1a; }
+.tex-title { text-align: center; margin-bottom: 1.8em; }
+.tex-title h1 { font-size: 17pt; font-weight: 700; border: 0; margin-bottom: .5em; }
+.tex-author { font-size: 11pt; line-height: 1.5; }
+.tex-date { font-size: 10.5pt; margin-top: .4em; }
+.tex-abstract { margin: 0 2em 1.6em; font-size: 10.5pt; }
+.tex-abstract-h { text-align: center; font-weight: 700; margin-bottom: .5em; }
+.tex-eq { text-align: center; margin: 1em 0; }
+.tex-table { border-collapse: collapse; margin: .6em auto; }
+.tex-table th, .tex-table td { padding: 4px 14px; text-align: center; }
+.tex-table tr:first-child th { border-top: 1.2pt solid #000; border-bottom: .6pt solid #000; font-weight: 700; }
+.tex-table tr:last-child td { border-bottom: 1.2pt solid #000; }
+.tex-caption { text-align: center; font-size: 10pt; margin-bottom: 1em; }
+.tex-fig { margin: 1em 0; text-align: center; }
+.tex-fig-box { border: 1px dashed #bbb; padding: 26px; color: #888; font-size: 10pt; }
+.tex-fig figcaption { font-size: 10pt; margin-top: .4em; }
+.tex-secnum { margin-right: .6em; }
+.tex-cite { color: #1e88e5; }
+.tex-ref { color: #1e88e5; }
+.tex-bib { font-size: 10.5pt; }
 </style>
 </head>
 <body>
@@ -578,7 +650,8 @@ body {
   <div class="header-actions">
     <button class="btn btn-secondary btn-sm" onclick="openModal('upload-modal')" data-tip="Upload ZIP or DOCX">⬆ Import</button>
     <button class="btn btn-secondary btn-sm" onclick="openModal('export-modal')" data-tip="Download document">⬇ Export</button>
-    <button class="btn btn-green btn-sm" onclick="compilePdf()" data-tip="Compile to PDF preview">▶ Compile</button>
+    <button class="btn btn-green btn-sm" onclick="latexMode ? compileTex() : compilePdf()" data-tip="Compile preview">▶ Compile</button>
+    <button class="btn btn-overleaf btn-sm" onclick="openInOverleaf()" data-tip="Compile with real pdfLaTeX on Overleaf">📤 Overleaf</button>
     <button class="btn btn-primary btn-sm" onclick="autoSave()">💾 Save</button>
   </div>
 </div>
@@ -735,10 +808,25 @@ body {
     <div id="split-area">
       <div id="editor-pane">
         <div id="editor-label">
-          <span>✏️ EDITOR</span>
+          <div class="mode-switch">
+            <button id="mode-visual" class="mode-btn active" onclick="setMode('visual')">✏️ Visual</button>
+            <button id="mode-latex" class="mode-btn" onclick="setMode('latex')">\( \TeX \) LaTeX</button>
+          </div>
           <span id="word-count">0 words</span>
         </div>
-        <div id="editor" contenteditable="true" spellcheck="false" oninput="onEditorInput()" onkeyup="updateToolbarState()" onmouseup="updateToolbarState()"></div>
+        <div id="wysiwyg-wrap">
+          <div id="editor" contenteditable="true" spellcheck="false" oninput="onEditorInput()" onkeyup="updateToolbarState()" onmouseup="updateToolbarState()"></div>
+        </div>
+        <div id="latex-wrap">
+          <div id="tex-actions">
+            <button class="btn btn-secondary btn-sm" onclick="setMode('latex');showSource(buildLatex().tex);compileTex()" data-tip="Rebuild the source from the visual document">↻ Regenerate</button>
+            <button class="btn btn-secondary btn-sm" onclick="exportTex()">⬇ .tex</button>
+            <button class="btn btn-secondary btn-sm" onclick="exportTexZip()">⬇ zip</button>
+            <button class="btn btn-overleaf btn-sm" onclick="openInOverleaf()">📤 Open in Overleaf</button>
+            <span id="tex-stats"></span>
+          </div>
+          <div id="cm-host"><textarea id="latex-source" spellcheck="false"></textarea></div>
+        </div>
       </div>
       <div id="resizer"></div>
       <div id="preview-pane">
@@ -752,6 +840,15 @@ body {
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- COMPILE LOG -->
+    <div id="log-pane">
+      <div id="log-head">
+        <button id="log-toggle" class="mode-btn" onclick="toggleLog()">📋 Compile log</button>
+        <span id="compile-badge" class="compile-badge"></span>
+      </div>
+      <div id="log-body"></div>
     </div>
 
   </div><!-- /main -->
@@ -850,11 +947,23 @@ body {
       </button>
       <button class="btn btn-secondary" onclick="exportPDF()" style="justify-content:flex-start;gap:12px;padding:12px 16px">
         <span style="font-size:22px">📄</span>
-        <span><strong>PDF Document</strong><br><small style="font-weight:400;opacity:0.8">Print-ready, non-editable format</small></span>
+        <span><strong>PDF Document</strong><br><small style="font-weight:400;opacity:0.8">Snapshot of the preview &mdash; for a true TeX-typeset PDF use Overleaf</small></span>
       </button>
       <button class="btn btn-secondary" onclick="exportHTML()" style="justify-content:flex-start;gap:12px;padding:12px 16px">
         <span style="font-size:22px">🌐</span>
         <span><strong>HTML File</strong><br><small style="font-weight:400;opacity:0.8">For web publishing</small></span>
+      </button>
+      <button class="btn btn-secondary" onclick="exportTex()" style="justify-content:flex-start;gap:12px;padding:12px 16px">
+        <span style="font-size:22px">Σ</span>
+        <span><strong>LaTeX Source (.tex)</strong><br><small style="font-weight:400;opacity:0.8">Compiles in Overleaf, TeXstudio, pdflatex</small></span>
+      </button>
+      <button class="btn btn-secondary" onclick="exportTexZip()" style="justify-content:flex-start;gap:12px;padding:12px 16px">
+        <span style="font-size:22px">📦</span>
+        <span><strong>LaTeX Project (.zip)</strong><br><small style="font-weight:400;opacity:0.8">main.tex + refs.bib, ready to upload to Overleaf</small></span>
+      </button>
+      <button class="btn btn-secondary" onclick="exportBib()" style="justify-content:flex-start;gap:12px;padding:12px 16px">
+        <span style="font-size:22px">📚</span>
+        <span><strong>BibTeX (.bib)</strong><br><small style="font-weight:400;opacity:0.8">Your references as a BibTeX database</small></span>
       </button>
       <button class="btn btn-secondary" onclick="exportTXT()" style="justify-content:flex-start;gap:12px;padding:12px 16px">
         <span style="font-size:22px">📃</span>
@@ -1123,7 +1232,7 @@ function previewMath() {
   const val = document.getElementById('math-input').value;
   const box = document.getElementById('math-preview-box');
   box.innerHTML = `\\(${val}\\)`;
-  if (window.MathJax) MathJax.typesetPromise([box]).catch(console.error);
+  mj(box);
 }
 
 function insertMath() {
@@ -1141,7 +1250,7 @@ function insertMath() {
   fmt('insertHTML', html);
   closeModal('math-modal');
   document.getElementById('math-input').value = '';
-  if (window.MathJax) MathJax.typesetPromise([editor]).catch(console.error);
+  mj(editor);
 }
 
 // ═══════════════════════════════════════
@@ -1397,7 +1506,7 @@ function loadTemplate(name) {
     if (!confirm('This will replace your current document. Continue?')) return;
   }
   editor.innerHTML = templates[name] || templates.blank;
-  if (window.MathJax) MathJax.typesetPromise([editor]).catch(console.error);
+  mj(editor);
   updateWordCount();
   autoSave();
 }
@@ -1407,6 +1516,7 @@ function loadTemplate(name) {
 // ═══════════════════════════════════════
 let compileTimer = null;
 function onEditorInput() {
+  if (latexMode) return;
   updateWordCount();
   clearTimeout(compileTimer);
   compileTimer = setTimeout(compilePdf, 1500);
@@ -1414,9 +1524,12 @@ function onEditorInput() {
 }
 
 function compilePdf() {
+  if (latexMode) { compileTex(); return; }
   const html = editor.innerHTML;
   previewPage.innerHTML = html;
-  if (window.MathJax) MathJax.typesetPromise([previewPage]).catch(console.error);
+  mj(previewPage);
+  const badge = document.getElementById('compile-badge');
+  if (badge) { badge.textContent = ''; badge.className = 'compile-badge'; }
 }
 
 function togglePreview() {
@@ -1609,7 +1722,7 @@ function handleFileUpload(input) {
         editor.innerHTML = result.value;
         document.getElementById('doc-title-input').value = file.name.replace(/\.(docx|doc)$/, '');
         status.textContent = '✅ DOCX imported successfully!';
-        if (window.MathJax) MathJax.typesetPromise([editor]).catch(console.error);
+        mj(editor);
         updateWordCount();
         autoSave();
       }).catch(err => { status.textContent = '❌ Error: ' + err.message; });
@@ -1700,7 +1813,7 @@ function loadSaved() {
       editor.innerHTML = saved;
       if (title) document.getElementById('doc-title-input').value = title;
       document.getElementById('sb-saved').textContent = 'Restored ✓';
-      if (window.MathJax) MathJax.typesetPromise([editor]).catch(console.error);
+      mj(editor);
       updateWordCount();
     }
   } catch(e) {}
@@ -1769,14 +1882,776 @@ window.addEventListener('load', () => {
   if (!localStorage.getItem('scholeditor_content')) {
     loadTemplate('research');
   }
+  compilePdf();
+  logClear();
+  logLine('info', 'Ready. Switch to the LaTeX tab to edit the .tex source, then send it to Overleaf for a real pdfLaTeX build.');
+  renderLog();
 });
 
-// MathJax config
-window.MathJax = {
-  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']], packages: {'[+]': ['ams']} },
-  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] },
-  startup: { ready() { MathJax.startup.defaultReady(); MathJax.typesetPromise([document.getElementById('editor')]); } }
+
+// ═══════════════════════════════════════════════════════════════
+//  MATHJAX — SAFE TYPESET
+//  MathJax 3 replaces window.MathJax asynchronously. Never call
+//  typesetPromise directly: wait for startup.promise first.
+// ═══════════════════════════════════════════════════════════════
+const MATH_RE = /\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$[^$\n]+\$/g;
+
+// MathJax replaces the LaTeX text with rendered glyphs, which would otherwise
+// destroy the source when we convert the document back to LaTeX. Wrap every
+// math run in a span that keeps the original in data-tex first.
+function stashMath(root) {
+  if (!root || !root.nodeType) return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+  const targets = [];
+  let n;
+  while ((n = walker.nextNode())) {
+    if (!n.nodeValue || !n.parentElement) continue;
+    if (n.parentElement.closest('.tex-src, mjx-container, script, style')) continue;
+    MATH_RE.lastIndex = 0;
+    if (MATH_RE.test(n.nodeValue)) targets.push(n);
+  }
+  targets.forEach(node => {
+    const s = node.nodeValue;
+    const frag = document.createDocumentFragment();
+    let last = 0, m;
+    MATH_RE.lastIndex = 0;
+    while ((m = MATH_RE.exec(s))) {
+      if (m.index > last) frag.appendChild(document.createTextNode(s.slice(last, m.index)));
+      const sp = document.createElement('span');
+      sp.className = 'tex-src';
+      sp.setAttribute('data-tex', m[0]);
+      sp.textContent = m[0];
+      frag.appendChild(sp);
+      last = m.index + m[0].length;
+    }
+    if (last < s.length) frag.appendChild(document.createTextNode(s.slice(last)));
+    node.parentNode.replaceChild(frag, node);
+  });
+}
+
+function mj(el) {
+  if (el) { try { stashMath(el); } catch (e) { console.warn('stashMath:', e); } }
+  if (!window.MathJax || !MathJax.startup || !MathJax.startup.promise) return Promise.resolve();
+  return MathJax.startup.promise
+    .then(() => MathJax.typesetPromise(el ? [el] : undefined))
+    .catch(err => console.error('MathJax typeset failed:', err));
+}
+
+// Recover the original TeX from a rendered container, if the stash was missed.
+function texFromRendered(node) {
+  try {
+    for (const item of MathJax.startup.document.math) {
+      if (item.typesetRoot === node || node.contains(item.typesetRoot)) {
+        return item.display ? '\\[' + item.math + '\\]' : '$' + item.math + '$';
+      }
+    }
+  } catch (e) { /* MathJax internals changed — fall through */ }
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  LATEX LAYER
+// ═══════════════════════════════════════════════════════════════
+let latexMode = false;        // true when the .tex source pane is active
+let cmEditor = null;          // CodeMirror instance
+let texDirty = false;         // source edited by hand since last generation
+const texLog = [];            // compile log lines
+
+function logClear() { texLog.length = 0; }
+function logLine(kind, msg, line) {
+  texLog.push({ kind, msg, line: line || null });
+}
+function renderLog() {
+  const box = document.getElementById('log-body');
+  if (!box) return;
+  if (!texLog.length) {
+    box.innerHTML = '<div class="log-ok">✓ No problems found. Document is ready to compile.</div>';
+    return;
+  }
+  box.innerHTML = texLog.map(e =>
+    `<div class="log-${e.kind}"><span class="log-tag">${e.kind.toUpperCase()}</span>` +
+    (e.line ? `<span class="log-line">line ${e.line}</span>` : '') +
+    `<span>${escapeHtml(e.msg)}</span></div>`
+  ).join('');
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+// ── Escaping ──────────────────────────────────────────────────
+const TEX_SPECIAL = {
+  '\\': '\\textbackslash{}', '{': '\\{', '}': '\\}', '$': '\\$', '&': '\\&',
+  '#': '\\#', '_': '\\_', '%': '\\%', '~': '\\textasciitilde{}', '^': '\\textasciicircum{}'
 };
+function texEscape(s) {
+  return String(s)
+    .replace(/[\\{}$&#_%~^]/g, c => TEX_SPECIAL[c])
+    .replace(/\u2014/g, '---').replace(/\u2013/g, '--')
+    .replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'")
+    .replace(/\u00A0/g, '~');
+}
+
+// Protect math so it is never escaped: \( .. \), \[ .. \], $ .. $
+const MATH_TOKEN = '\u0001MATH';
+function protectMath(text, store) {
+  return text.replace(/\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$[^$\n]+\$/g, m => {
+    let inner = m;
+    if (m.startsWith('\\(')) inner = '$' + m.slice(2, -2).trim() + '$';
+    else if (m.startsWith('\\[')) inner = '\\[' + m.slice(2, -2).trim() + '\\]';
+    store.push(inner);
+    return MATH_TOKEN + (store.length - 1) + '\u0002';
+  });
+}
+function restoreMath(text, store) {
+  return text.replace(/\u0001MATH(\d+)\u0002/g, (_, i) => store[+i]);
+}
+
+// ── Inline (character-level) conversion ───────────────────────
+function inlineTex(node) {
+  let out = '';
+  node.childNodes.forEach(n => {
+    if (n.nodeType === 3) {
+      const store = [];
+      out += restoreMath(texEscape(protectMath(n.nodeValue, store)), store);
+      return;
+    }
+    if (n.nodeType !== 1) return;
+    const tag = n.tagName.toLowerCase();
+
+    // math: always prefer the stashed source over the rendered glyphs
+    if (n.hasAttribute && n.hasAttribute('data-tex')) {
+      const raw = n.getAttribute('data-tex');
+      out += raw.startsWith('\\(') ? '$' + raw.slice(2, -2).trim() + '$' : raw;
+      return;
+    }
+    if (tag === 'mjx-container') {
+      const rec = texFromRendered(n);
+      out += rec ? (rec.startsWith('$') ? rec : rec) : '';
+      return;
+    }
+    if (tag === 'mjx-assistive-mml') return;
+
+    const inner = inlineTex(n);
+    switch (tag) {
+      case 'strong': case 'b':   out += inner.trim() ? `\\textbf{${inner}}` : ''; break;
+      case 'em': case 'i':       out += inner.trim() ? `\\emph{${inner}}` : ''; break;
+      case 'u':                  out += `\\underline{${inner}}`; break;
+      case 's': case 'strike': case 'del': out += `\\sout{${inner}}`; break;
+      case 'sup':
+        // a bracketed number is a citation marker, not superscript text
+        if (/^\[\d+\]$/.test(n.textContent.trim())) out += `\\cite{ref${n.textContent.replace(/\D/g, '')}}`;
+        else out += `\\textsuperscript{${inner}}`;
+        break;
+      case 'sub':                out += `\\textsubscript{${inner}}`; break;
+      case 'code':               out += `\\texttt{${inner}}`; break;
+      case 'br':                 out += ' \\\\\n'; break;
+      case 'a': {
+        const href = n.getAttribute('href') || '';
+        out += href ? `\\href{${href}}{${inner}}` : inner;
+        break;
+      }
+      case 'span': {
+        const col = n.style && n.style.color;
+        out += col ? `\\textcolor[HTML]{${rgbToHex(col)}}{${inner}}` : inner;
+        break;
+      }
+      default: out += inner;
+    }
+  });
+  return out;
+}
+function rgbToHex(c) {
+  const m = c.match(/\d+/g);
+  if (!m) return '000000';
+  return m.slice(0, 3).map(v => (+v).toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+function stripNumbering(s) { return s.replace(/^\s*\d+(\.\d+)*[.)]?\s+/, ''); }
+
+// ── Block-level conversion ────────────────────────────────────
+function blockTex(el, ctx) {
+  const tag = el.tagName.toLowerCase();
+
+  if (tag === 'h1') return `\\section{${stripNumbering(inlineTex(el))}}`;
+  if (tag === 'h2') return `\\section{${stripNumbering(inlineTex(el))}}`;
+  if (tag === 'h3') return `\\subsection{${stripNumbering(inlineTex(el))}}`;
+  if (tag === 'h4') return `\\subsubsection{${stripNumbering(inlineTex(el))}}`;
+
+  if (tag === 'p') {
+    // standalone display equation inside a paragraph
+    const raw = (texOf(el) || el.textContent).trim();
+    if (/^\\\[[\s\S]*\\\]$/.test(raw)) return eqEnv(raw.slice(2, -2).trim(), ctx);
+    const t = inlineTex(el).trim();
+    return t ? t : '';
+  }
+
+  if (el.classList && el.classList.contains('math-block')) {
+    const raw = (texOf(el) || el.textContent).trim().replace(/^\\\[|\\\]$/g, '').trim();
+    return eqEnv(raw, ctx);
+  }
+
+  if (tag === 'ul' || tag === 'ol') return listTex(el, ctx);
+
+  if (tag === 'table') return tableTex(el, ctx);
+
+  if (tag === 'blockquote') return `\\begin{quote}\n${inlineTex(el).trim()}\n\\end{quote}`;
+
+  if (tag === 'pre') {
+    ctx.packages.add('listings');
+    return `\\begin{lstlisting}\n${el.textContent.replace(/\s+$/, '')}\n\\end{lstlisting}`;
+  }
+
+  if (tag === 'figure' || (tag === 'div' && el.querySelector('img'))) {
+    const img = el.querySelector('img');
+    if (img) return figureTex(img, el.querySelector('figcaption'), ctx);
+  }
+  if (tag === 'img') return figureTex(el, null, ctx);
+
+  if (tag === 'hr') return '\\hrulefill';
+
+  if (tag === 'div') {
+    // generic container: convert its children
+    const parts = [];
+    [...el.children].forEach(c => { const t = blockTex(c, ctx); if (t) parts.push(t); });
+    if (parts.length) return parts.join('\n\n');
+    const t = inlineTex(el).trim();
+    return t;
+  }
+
+  ctx.warnings.push(`Unsupported block <${tag}> was exported as plain text.`);
+  return inlineTex(el).trim();
+}
+
+// The original LaTeX of an element, if any math inside it was stashed.
+function texOf(el) {
+  const src = el.querySelector && el.querySelector('[data-tex]');
+  if (src) return src.getAttribute('data-tex');
+  const c = el.querySelector && el.querySelector('mjx-container');
+  if (c) return texFromRendered(c);
+  return null;
+}
+
+function eqEnv(body, ctx) {
+  ctx.packages.add('amsmath');
+  ctx.eqCount++;
+  return `\\begin{equation}\n  ${body}\n  \\label{eq:${ctx.eqCount}}\n\\end{equation}`;
+}
+
+function listTex(el, ctx) {
+  const env = el.tagName.toLowerCase() === 'ol' ? 'enumerate' : 'itemize';
+  const items = [...el.children].filter(c => c.tagName === 'LI').map(li => {
+    const nested = [...li.children].filter(c => /^(UL|OL)$/.test(c.tagName));
+    const clone = li.cloneNode(true);
+    [...clone.children].forEach(c => { if (/^(UL|OL)$/.test(c.tagName)) c.remove(); });
+    let s = `  \\item ${inlineTex(clone).trim()}`;
+    nested.forEach(n => { s += '\n' + listTex(n, ctx).split('\n').map(l => '  ' + l).join('\n'); });
+    return s;
+  });
+  return `\\begin{${env}}\n${items.join('\n')}\n\\end{${env}}`;
+}
+
+function tableTex(el, ctx) {
+  ctx.packages.add('booktabs');
+  const rows = [...el.querySelectorAll('tr')];
+  if (!rows.length) return '';
+  const nCols = Math.max(...rows.map(r => r.children.length));
+  const hasHeader = rows[0].querySelector('th') !== null;
+  const align = Array.from({ length: nCols }, (_, i) => (i === 0 ? 'l' : 'c')).join('');
+  const body = rows.map((r, ri) => {
+    const cells = [...r.children].map(c => inlineTex(c).trim());
+    while (cells.length < nCols) cells.push('');
+    let line = '  ' + cells.join(' & ') + ' \\\\';
+    if (ri === 0 && hasHeader) line += '\n  \\midrule';
+    return line;
+  }).join('\n');
+  ctx.tabCount++;
+  return `\\begin{table}[htbp]\n  \\centering\n  \\caption{Table ${ctx.tabCount}}\n  \\label{tab:${ctx.tabCount}}\n  \\begin{tabular}{${align}}\n  \\toprule\n${body}\n  \\bottomrule\n  \\end{tabular}\n\\end{table}`;
+}
+
+function figureTex(img, caption, ctx) {
+  ctx.packages.add('graphicx');
+  ctx.figCount++;
+  const src = img.getAttribute('src') || '';
+  let file = 'figure' + ctx.figCount;
+  if (src.startsWith('data:')) {
+    ctx.warnings.push(`Figure ${ctx.figCount} is embedded as a data URI. Save it as ${file}.png next to your .tex file.`);
+  } else {
+    file = src.split('/').pop().replace(/\.[^.]+$/, '') || file;
+  }
+  const cap = caption ? inlineTex(caption).trim() : `Figure ${ctx.figCount}`;
+  return `\\begin{figure}[htbp]\n  \\centering\n  \\includegraphics[width=0.8\\linewidth]{${file}}\n  \\caption{${cap}}\n  \\label{fig:${ctx.figCount}}\n\\end{figure}`;
+}
+
+// ── Whole-document generation ─────────────────────────────────
+function buildLatex() {
+  const ctx = { packages: new Set(['amsmath', 'amssymb', 'graphicx', 'hyperref']), warnings: [], eqCount: 0, tabCount: 0, figCount: 0 };
+  const root = document.createElement('div');
+  root.innerHTML = editor.innerHTML;
+
+  const kids = [...root.children];
+  let idx = 0;
+  let title = '', author = '', abstract = '', keywords = '';
+
+  if (kids[idx] && kids[idx].tagName === 'H1') { title = inlineTex(kids[idx]).trim(); idx++; }
+  if (kids[idx] && kids[idx].tagName === 'P' && kids[idx].innerHTML.includes('<br')) {
+    author = inlineTex(kids[idx]).replace(/\s*\\\\\s*/g, ' \\\\ ').trim();
+    idx++;
+  }
+
+  const bodyParts = [];
+  let bibItems = [];
+
+  for (; idx < kids.length; idx++) {
+    const el = kids[idx];
+    const headText = /^H[1-4]$/.test(el.tagName) ? el.textContent.trim() : '';
+
+    if (/^abstract$/i.test(headText)) {
+      const chunk = [];
+      idx++;
+      for (; idx < kids.length && !/^H[12]$/.test(kids[idx].tagName); idx++) {
+        const t = kids[idx].textContent.trim();
+        if (/^keywords\s*:/i.test(t)) { keywords = inlineTex(kids[idx]).replace(/^\\textbf\{Keywords:?\}\s*:?\s*/i, '').replace(/^Keywords:?\s*/i, '').trim(); continue; }
+        const b = blockTex(kids[idx], ctx);
+        if (b) chunk.push(b);
+      }
+      idx--;
+      abstract = chunk.join('\n\n');
+      continue;
+    }
+
+    if (/^(references|bibliography)$/i.test(headText)) {
+      idx++;
+      for (; idx < kids.length && !/^H[12]$/.test(kids[idx].tagName); idx++) {
+        const el2 = kids[idx];
+        if (el2.tagName === 'OL' || el2.tagName === 'UL') {
+          [...el2.querySelectorAll('li')].forEach(li => bibItems.push(inlineTex(li).trim()));
+        } else if (el2.textContent.trim()) {
+          bibItems.push(inlineTex(el2).trim());
+        }
+      }
+      idx--;
+      continue;
+    }
+
+    const b = blockTex(el, ctx);
+    if (b) bodyParts.push(b);
+  }
+
+  // Citations added through the References dialog take priority
+  if (citations && citations.length) {
+    bibItems = citations.map(c => texEscape(c.formatted || `${c.author} (${c.year}). ${c.title}.`));
+  }
+
+  const pkgOrder = ['inputenc', 'fontenc', 'amsmath', 'amssymb', 'graphicx', 'booktabs', 'array', 'listings', 'ulem', 'xcolor', 'hyperref'];
+  ctx.packages.add('ulem'); ctx.packages.add('xcolor'); ctx.packages.add('array');
+  const pkgs = pkgOrder.filter(p => ctx.packages.has(p));
+
+  const docTitle = title || (document.getElementById('doc-title-input').value || 'Untitled Document');
+  const sizeSel = document.getElementById('paper-size');
+  const pageSize = sizeSel ? sizeSel.value : 'a4';
+  const fontSize = '11pt';
+
+  let tex = '';
+  tex += `% Generated by ScholEditor — compile with pdfLaTeX\n`;
+  const paperOpt = /letter/i.test(pageSize) ? 'letterpaper' : /a5/i.test(pageSize) ? 'a5paper' : 'a4paper';
+  tex += `\\documentclass[${fontSize},${paperOpt}]{article}\n`;
+  tex += `\\usepackage[utf8]{inputenc}\n\\usepackage[T1]{fontenc}\n`;
+  pkgs.filter(p => !['inputenc', 'fontenc'].includes(p)).forEach(p => {
+    if (p === 'ulem') tex += `\\usepackage[normalem]{ulem}\n`;
+    else if (p === 'hyperref') tex += `\\usepackage[hidelinks]{hyperref}\n`;
+    else tex += `\\usepackage{${p}}\n`;
+  });
+  tex += `\\usepackage[margin=1in]{geometry}\n\n`;
+  tex += `\\title{${docTitle}}\n`;
+  tex += `\\author{${author || '\\ '}}\n`;
+  tex += `\\date{\\today}\n\n`;
+  tex += `\\begin{document}\n\\maketitle\n\n`;
+  if (abstract) {
+    tex += `\\begin{abstract}\n${abstract}\n`;
+    if (keywords) tex += `\n\\medskip\n\\noindent\\textbf{Keywords:} ${keywords}\n`;
+    tex += `\\end{abstract}\n\n`;
+  }
+  tex += bodyParts.join('\n\n') + '\n';
+  if (bibItems.length) {
+    tex += `\n\\begin{thebibliography}{${bibItems.length}}\n`;
+    bibItems.forEach((b, i) => { tex += `\\bibitem{ref${i + 1}} ${b}\n`; });
+    tex += `\\end{thebibliography}\n`;
+  }
+  tex += `\n\\end{document}\n`;
+
+  return { tex, warnings: ctx.warnings };
+}
+
+// ── Validation (the "compile check") ──────────────────────────
+function validateLatex(tex) {
+  logClear();
+  const lines = tex.split('\n');
+  const envStack = [];
+  let braces = 0, mathDollars = 0;
+
+  lines.forEach((ln, i) => {
+    const n = i + 1;
+    const stripped = ln.replace(/%.*$/, '');
+    let m;
+    const beginRe = /\\begin\{([^}]+)\}/g;
+    while ((m = beginRe.exec(stripped))) envStack.push({ name: m[1], line: n });
+    const endRe = /\\end\{([^}]+)\}/g;
+    while ((m = endRe.exec(stripped))) {
+      const top = envStack.pop();
+      if (!top) logLine('error', `\\end{${m[1]}} has no matching \\begin.`, n);
+      else if (top.name !== m[1]) logLine('error', `\\begin{${top.name}} (line ${top.line}) closed by \\end{${m[1]}}.`, n);
+    }
+    for (const ch of stripped.replace(/\\[{}]/g, '')) {
+      if (ch === '{') braces++; else if (ch === '}') braces--;
+      if (braces < 0) { logLine('error', 'Unmatched closing brace }', n); braces = 0; }
+    }
+    mathDollars += (stripped.match(/(?<!\\)\$/g) || []).length;
+  });
+
+  envStack.forEach(e => logLine('error', `\\begin{${e.name}} is never closed.`, e.line));
+  if (braces > 0) logLine('error', `${braces} unclosed brace(s) { in the document.`);
+  if (mathDollars % 2 !== 0) logLine('error', 'Odd number of $ — a math block is left open.');
+  if (!/\\documentclass/.test(tex)) logLine('error', 'Missing \\documentclass.');
+  if (!/\\begin\{document\}/.test(tex)) logLine('error', 'Missing \\begin{document}.');
+  if (!/\\end\{document\}/.test(tex)) logLine('error', 'Missing \\end{document}.');
+
+  // helpful warnings
+  if (/\\includegraphics/.test(tex)) logLine('info', 'Document uses \\includegraphics — upload the image files alongside the .tex when you compile.');
+  if (/\\cite\{/.test(tex) && !/thebibliography/.test(tex)) logLine('warn', '\\cite used but no bibliography was found.');
+
+  const errors = texLog.filter(e => e.kind === 'error').length;
+  if (!errors) logLine('info', `Document checks passed — ${lines.length} lines, ready for pdfLaTeX.`);
+  renderLog();
+  return errors === 0;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+//  LATEX → HTML  (preview renderer for the source pane)
+//  Covers the subset ScholEditor generates. Anything else is
+//  reported in the log rather than silently dropped.
+// ═══════════════════════════════════════════════════════════════
+function latexToHtml(tex) {
+  const unknown = new Set();
+
+  // keep only the document body
+  let body = tex;
+  const bm = tex.match(/\\begin\{document\}([\s\S]*?)\\end\{document\}/);
+  if (bm) body = bm[1];
+
+  const preamble = bm ? tex.slice(0, bm.index) : '';
+  const grab = re => { const m = preamble.match(re); return m ? m[1] : ''; };
+  const title = grab(/\\title\{([\s\S]*?)\}\s*\n/);
+  const author = grab(/\\author\{([\s\S]*?)\}\s*\n/);
+
+  // protect math before any other substitution
+  const math = [];
+  body = body.replace(/\\begin\{(equation\*?|align\*?|gather\*?)\}([\s\S]*?)\\end\{\1\}/g, (_, env, inner) => {
+    math.push('\\[' + inner.replace(/\\label\{[^}]*\}/g, '').trim() + '\\]');
+    return `\u0001M${math.length - 1}\u0002`;
+  });
+  body = body.replace(/\\\[[\s\S]*?\\\]|\$[^$\n]+\$/g, m => {
+    math.push(m.startsWith('$') ? '\\(' + m.slice(1, -1) + '\\)' : m);
+    return `\u0001M${math.length - 1}\u0002`;
+  });
+
+  body = body.replace(/(^|[^\\])%.*$/gm, '$1');          // comments
+  body = body.replace(/\\maketitle/g, '\u0001TITLE\u0002');
+
+  // environments
+  body = body.replace(/\\begin\{abstract\}([\s\S]*?)\\end\{abstract\}/g,
+    (_, c) => `<div class="tex-abstract"><div class="tex-abstract-h">Abstract</div>${paras(c)}</div>`);
+
+  body = body.replace(/\\begin\{(itemize|enumerate)\}([\s\S]*?)\\end\{\1\}/g, (_, env, c) => {
+    const tag = env === 'enumerate' ? 'ol' : 'ul';
+    const items = c.split(/\\item\s/).slice(1).map(s => `<li>${inlineHtml(s.trim(), unknown)}</li>`).join('');
+    return `<${tag}>${items}</${tag}>`;
+  });
+
+  body = body.replace(/\\begin\{table\}(\[[^\]]*\])?([\s\S]*?)\\end\{table\}/g, (_, _o, c) => {
+    const cap = (c.match(/\\caption\{([\s\S]*?)\}/) || [])[1] || '';
+    const tab = (c.match(/\\begin\{tabular\}\{[^}]*\}([\s\S]*?)\\end\{tabular\}/) || [])[1] || '';
+    return tableHtml(tab, cap, unknown);
+  });
+  body = body.replace(/\\begin\{tabular\}\{[^}]*\}([\s\S]*?)\\end\{tabular\}/g, (_, c) => tableHtml(c, '', unknown));
+
+  body = body.replace(/\\begin\{figure\}(\[[^\]]*\])?([\s\S]*?)\\end\{figure\}/g, (_, _o, c) => {
+    const cap = (c.match(/\\caption\{([\s\S]*?)\}/) || [])[1] || '';
+    const file = (c.match(/\\includegraphics(\[[^\]]*\])?\{([^}]*)\}/) || [])[2] || '';
+    return `<figure class="tex-fig"><div class="tex-fig-box">🖼 ${escapeHtml(file)}</div><figcaption>${inlineHtml(cap, unknown)}</figcaption></figure>`;
+  });
+
+  body = body.replace(/\\begin\{quote\}([\s\S]*?)\\end\{quote\}/g, (_, c) => `<blockquote>${paras(c)}</blockquote>`);
+  body = body.replace(/\\begin\{lstlisting\}([\s\S]*?)\\end\{lstlisting\}/g, (_, c) => `<pre>${escapeHtml(c.trim())}</pre>`);
+
+  body = body.replace(/\\begin\{thebibliography\}\{[^}]*\}([\s\S]*?)\\end\{thebibliography\}/g, (_, c) => {
+    const items = c.split(/\\bibitem\{[^}]*\}/).slice(1).map(s => `<li>${inlineHtml(s.trim(), unknown)}</li>`).join('');
+    return `<h2>References</h2><ol class="tex-bib">${items}</ol>`;
+  });
+
+  // sections — numbered exactly as pdfLaTeX would number them
+  let secN = 0, subN = 0, subsubN = 0;
+  body = body.replace(/\\(sub)?(sub)?section(\*)?\{([\s\S]*?)\}/g, (_, s1, s2, star, t) => {
+    const depth = (s1 ? 1 : 0) + (s2 ? 1 : 0);
+    const txt = inlineHtml(t, unknown);
+    if (star) return `\u0003<h${depth + 2}>${txt}</h${depth + 2}>\u0003`;
+    let num;
+    if (depth === 0) { secN++; subN = 0; subsubN = 0; num = `${secN}`; }
+    else if (depth === 1) { subN++; subsubN = 0; num = `${secN}.${subN}`; }
+    else { subsubN++; num = `${secN}.${subN}.${subsubN}`; }
+    return `\u0003<h${depth + 2}><span class="tex-secnum">${num}</span>${txt}</h${depth + 2}>\u0003`;
+  });
+
+  let html = paras(body, unknown);
+
+  const titleBlock = `<div class="tex-title"><h1>${inlineHtml(title, unknown)}</h1>` +
+    (author ? `<div class="tex-author">${inlineHtml(author, unknown)}</div>` : '') +
+    `<div class="tex-date">${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</div></div>`;
+  html = html.replace(/\u0001TITLE\u0002/g, titleBlock);
+
+  html = html.replace(/\u0001M(\d+)\u0002/g, (_, i) => {
+    const m = math[+i];
+    // math-block keeps the round trip working: blockTex() recognises the class
+    return m.startsWith('\\[') ? `<div class="math-block tex-eq">${m}</div>` : m;
+  });
+
+  return { html, unknown: [...unknown] };
+}
+
+function paras(src, unknown) {
+  return src.split(/\n\s*\n|\u0003/)
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(s => /^<(h[1-6]|div|ul|ol|table|figure|blockquote|pre)/.test(s) ? s : `<p>${inlineHtml(s, unknown)}</p>`)
+    .join('\n');
+}
+
+function tableHtml(tab, cap, unknown) {
+  const rows = tab.split(/\\\\/).map(r => r.replace(/\\(top|mid|bottom)rule|\\hline/g, '').trim()).filter(Boolean);
+  const body = rows.map((r, i) => {
+    const cells = r.split('&').map(c => inlineHtml(c.trim(), unknown));
+    const tag = i === 0 ? 'th' : 'td';
+    return '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>';
+  }).join('');
+  return `<table class="tex-table">${body}</table>` + (cap ? `<div class="tex-caption">${inlineHtml(cap, unknown)}</div>` : '');
+}
+
+function inlineHtml(s, unknown) {
+  if (!s) return '';
+  s = escapeHtml(s);
+  // \\ means a line break — must run before the \<command> cleanup below,
+  // otherwise "\\ " is eaten by the whitespace branch and one backslash survives.
+  s = s.replace(/\\\\/g, '\u0004BR\u0005');
+  s = s.replace(/\\textbf\{([^{}]*)\}/g, '<strong>$1</strong>')
+       .replace(/\\textit\{([^{}]*)\}/g, '<em>$1</em>')
+       .replace(/\\emph\{([^{}]*)\}/g, '<em>$1</em>')
+       .replace(/\\texttt\{([^{}]*)\}/g, '<code>$1</code>')
+       .replace(/\\underline\{([^{}]*)\}/g, '<u>$1</u>')
+       .replace(/\\sout\{([^{}]*)\}/g, '<s>$1</s>')
+       .replace(/\\textsuperscript\{([^{}]*)\}/g, '<sup>$1</sup>')
+       .replace(/\\textsubscript\{([^{}]*)\}/g, '<sub>$1</sub>')
+       .replace(/\\href\{([^}]*)\}\{([^{}]*)\}/g, '<a href="$1">$2</a>')
+       .replace(/\\url\{([^}]*)\}/g, '<a href="$1">$1</a>')
+       .replace(/\\cite\{([^}]*)\}/g, '<sup class="tex-cite">[$1]</sup>')
+       .replace(/\\ref\{([^}]*)\}/g, '<span class="tex-ref">$1</span>')
+       .replace(/\\label\{[^}]*\}/g, '')
+       .replace(/\\(noindent|centering|medskip|smallskip|bigskip|today|hrulefill|\s)/g, ' ')
+       .replace(/---/g, '—').replace(/--/g, '–')
+       .replace(/\\[&%$#_{}]/g, m => m[1])
+       .replace(/~/g, ' ')
+       .replace(/\u0004BR\u0005/g, '<br>');
+  if (unknown) {
+    const leftovers = s.match(/\\[a-zA-Z]+/g);
+    if (leftovers) leftovers.forEach(c => unknown.add(c));
+  }
+  return s;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MODE SWITCHING
+// ═══════════════════════════════════════════════════════════════
+function setMode(mode) {
+  const wantLatex = mode === 'latex';
+  if (wantLatex === latexMode) return;
+
+  if (wantLatex) {
+    const { tex, warnings } = buildLatex();
+    showSource(tex);
+    warnings.forEach(w => logLine('warn', w));
+    latexMode = true;
+    texDirty = false;
+  } else {
+    if (texDirty && !confirm('Switching back to the visual editor rebuilds it from the LaTeX source.\nSome hand-written LaTeX may not survive the round trip. Continue?')) return;
+    const src = cmEditor ? cmEditor.getValue() : '';
+    const { html } = latexToHtml(src);
+    editor.innerHTML = html;
+    mj(editor);
+    latexMode = false;
+  }
+
+  document.getElementById('wysiwyg-wrap').style.display = wantLatex ? 'none' : 'block';
+  document.getElementById('latex-wrap').style.display = wantLatex ? 'flex' : 'none';
+  document.getElementById('mode-visual').classList.toggle('active', !wantLatex);
+  document.getElementById('mode-latex').classList.toggle('active', wantLatex);
+  document.getElementById('toolbar').style.display = wantLatex ? 'none' : 'flex';
+  document.getElementById('tex-actions').style.display = wantLatex ? 'flex' : 'none';
+
+  if (wantLatex) {
+    setTimeout(() => { if (cmEditor) { cmEditor.refresh(); cmEditor.focus(); } }, 30);
+    compileTex();
+  } else {
+    compilePdf();
+  }
+}
+
+function showSource(tex) {
+  if (!cmEditor) {
+    const ta = document.getElementById('latex-source');
+    if (window.CodeMirror) {
+      cmEditor = CodeMirror.fromTextArea(ta, {
+        mode: 'stex', theme: 'material-darker', lineNumbers: true,
+        lineWrapping: true, matchBrackets: true, autoCloseBrackets: true,
+        indentUnit: 2, tabSize: 2
+      });
+      cmEditor.setSize('100%', '100%');
+      cmEditor.on('change', () => {
+        texDirty = true;
+        clearTimeout(window._texTimer);
+        window._texTimer = setTimeout(compileTex, 900);
+        updateTexStats();
+      });
+    } else {
+      // graceful fallback: plain textarea
+      ta.addEventListener('input', () => {
+        texDirty = true;
+        clearTimeout(window._texTimer);
+        window._texTimer = setTimeout(compileTex, 900);
+      });
+      cmEditor = { getValue: () => ta.value, setValue: v => { ta.value = v; }, refresh() {}, focus: () => ta.focus() };
+    }
+  }
+  cmEditor.setValue(tex);
+  updateTexStats();
+}
+
+function updateTexStats() {
+  if (!cmEditor) return;
+  const v = cmEditor.getValue();
+  const el = document.getElementById('tex-stats');
+  if (el) el.textContent = `${v.split('\n').length} lines · ${v.length} chars`;
+}
+
+function getTex() {
+  if (latexMode && cmEditor) return cmEditor.getValue();
+  return buildLatex().tex;
+}
+
+// ── Compile (render preview from LaTeX source + validate) ─────
+function compileTex() {
+  const src = cmEditor ? cmEditor.getValue() : '';
+  const ok = validateLatex(src);
+  const { html, unknown } = latexToHtml(src);
+  if (unknown.length) {
+    unknown.slice(0, 8).forEach(c => logLine('warn', `${c} is not rendered in the preview. It will still compile in real LaTeX.`));
+    renderLog();
+  }
+  const page = document.getElementById('preview-page');
+  page.innerHTML = `<div class="tex-doc">${html}</div>`;
+  mj(page);
+  const badge = document.getElementById('compile-badge');
+  if (badge) {
+    badge.textContent = ok ? '✓ No errors' : `✕ ${texLog.filter(e => e.kind === 'error').length} error(s)`;
+    badge.className = 'compile-badge ' + (ok ? 'ok' : 'bad');
+  }
+}
+
+function toggleLog() {
+  const el = document.getElementById('log-pane');
+  el.classList.toggle('open');
+  document.getElementById('log-toggle').classList.toggle('active', el.classList.contains('open'));
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  OVERLEAF BRIDGE  — real pdfLaTeX, no backend required
+//  https://www.overleaf.com/devs  (POST /docs)
+// ═══════════════════════════════════════════════════════════════
+function openInOverleaf() {
+  const tex = getTex();
+  if (!validateLatex(tex)) {
+    if (!confirm('The document still has LaTeX errors (see the log).\nSend it to Overleaf anyway?')) {
+      document.getElementById('log-pane').classList.add('open');
+      return;
+    }
+  }
+  const f = document.createElement('form');
+  f.method = 'POST';
+  f.action = 'https://www.overleaf.com/docs';
+  f.target = '_blank';
+  f.rel = 'noopener';
+  const add = (name, value) => {
+    const i = document.createElement('input');
+    i.type = 'hidden'; i.name = name; i.value = value;
+    f.appendChild(i);
+  };
+  add('encoded_snip', encodeURIComponent(tex));
+  add('engine', 'pdflatex');
+  add('snip_name', (document.getElementById('doc-title-input').value || 'main').replace(/[^\w\-]+/g, '_') + '.tex');
+  document.body.appendChild(f);
+  f.submit();
+  document.body.removeChild(f);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  EXPORTS
+// ═══════════════════════════════════════════════════════════════
+function exportTex() {
+  const title = (document.getElementById('doc-title-input').value || 'main').replace(/[^\w\-]+/g, '_');
+  download(title + '.tex', getTex(), 'application/x-tex');
+  closeModal('export-modal');
+}
+
+function bibtexKey(c, i) {
+  const last = (c.author || 'ref').split(/[,&]/)[0].trim().split(/\s+/).pop().toLowerCase().replace(/\W/g, '');
+  return `${last || 'ref'}${c.year || ''}${i ? String.fromCharCode(96 + i) : ''}`;
+}
+function buildBibtex() {
+  if (!citations || !citations.length) return '';
+  const typeMap = { article: 'article', book: 'book', conference: 'inproceedings', website: 'misc', thesis: 'phdthesis' };
+  return citations.map((c, i) => {
+    const t = typeMap[c.type] || 'misc';
+    const fields = [];
+    const push = (k, v) => { if (v) fields.push(`  ${k} = {${v}}`); };
+    push('author', c.author); push('title', c.title); push('year', c.year);
+    if (t === 'article') { push('journal', c.journal); push('volume', c.volume); push('pages', c.pages); }
+    if (t === 'inproceedings') push('booktitle', c.conf);
+    if (t === 'book' || t === 'phdthesis') push('publisher', c.publisher);
+    push('doi', c.doi); push('url', c.url);
+    return `@${t}{${bibtexKey(c, 0)},\n${fields.join(',\n')}\n}`;
+  }).join('\n\n');
+}
+function exportBib() {
+  const bib = buildBibtex();
+  if (!bib) { alert('No references yet. Add them from the References panel first.'); return; }
+  const title = (document.getElementById('doc-title-input').value || 'refs').replace(/[^\w\-]+/g, '_');
+  download(title + '.bib', bib, 'text/plain');
+  closeModal('export-modal');
+}
+async function exportTexZip() {
+  if (!window.JSZip) { exportTex(); return; }
+  const title = (document.getElementById('doc-title-input').value || 'main').replace(/[^\w\-]+/g, '_');
+  const zip = new JSZip();
+  zip.file('main.tex', getTex());
+  const bib = buildBibtex();
+  if (bib) zip.file('refs.bib', bib);
+  zip.file('README.txt', 'Generated by ScholEditor.\n\nCompile with:\n  pdflatex main.tex\n  bibtex main\n  pdflatex main.tex\n  pdflatex main.tex\n\nOr upload this zip to Overleaf (New Project > Upload Project).\n');
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = title + '_latex.zip'; a.click();
+  URL.revokeObjectURL(url);
+  closeModal('export-modal');
+}
+
 </script>
 </body>
 </html>
