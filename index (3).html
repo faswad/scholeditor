@@ -1,0 +1,2164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ScholEditor – Online LaTeX Editor</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23098842'/><text x='16' y='23' font-family='Georgia,serif' font-size='20' font-weight='700' fill='white' text-anchor='middle'>S</text></svg>">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/stex/stex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/searchcursor.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/search.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/jump-to-line.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/brace-fold.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --bg:#1b222c; --bg2:#222a35; --panel:#2c3645; --panel2:#283140; --line:#3b4655; --line2:#495567;
+  --text:#e8edf2; --muted:#a7b1be; --dim:#7d8896;
+  --green:#098842; --green-h:#07733a; --green-soft:#1e5a3a; --sel:#195c37;
+  --red:#e0524a; --amber:#d99a1e; --blue:#4d8fe8;
+  --ed-bg:#0f1115; --ed-gutter:#14171c;
+  --top:40px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans",Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+svg.i{width:18px;height:18px;fill:currentColor;flex-shrink:0;vertical-align:middle}
+[hidden]{display:none!important}
+.logo{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:20px;color:#fff;text-decoration:none;letter-spacing:-.3px}
+.logo .mk{width:30px;height:30px;border-radius:8px;background:var(--green);display:grid;place-items:center;font-family:Georgia,"Times New Roman",serif;font-size:19px;color:#fff}
+.logo .acc{color:#5fd07f}
+
+/* ========== DASHBOARD ========== */
+#dash{display:flex;flex-direction:column;height:100%}
+#dashTop{height:64px;display:flex;align-items:center;justify-content:flex-end;gap:28px;padding:0 24px;flex-shrink:0}
+#dashTop a{color:var(--text);text-decoration:none;cursor:pointer;font-size:15px}
+#dashTop a:hover{color:#fff;text-decoration:underline}
+#dashBody{flex:1;display:flex;min-height:0}
+#dashNav{width:290px;padding:0 18px 14px;display:flex;flex-direction:column;flex-shrink:0;margin-top:-50px}
+#dashNav .logo{margin:6px 6px 26px}
+.dn{display:flex;align-items:center;gap:12px;padding:9px 14px;border-radius:7px;cursor:pointer;color:var(--text);font-size:15px;border:0;background:none;width:100%;text-align:left}
+.dn:hover{background:rgba(255,255,255,.06)}
+.dn.on{background:var(--green);color:#fff;font-weight:600}
+.dn .cnt{margin-left:auto;color:var(--muted);font-size:13px}
+.dn.on .cnt{color:#d9f2e2}
+.dsep{border-top:1px solid var(--line);margin:14px 0}
+.dtitle{font-size:13px;font-weight:700;letter-spacing:.3px;color:var(--muted);padding:6px 14px 8px}
+.tagdot{width:12px;height:9px;border-radius:2px;display:inline-block}
+#dashMain{flex:1;min-width:0;background:var(--panel);border-radius:14px 0 0 0;padding:22px 26px;display:flex;flex-direction:column;overflow:hidden}
+#dashMain h1{margin:0;font-size:24px;font-weight:600}
+.dashRow{display:flex;align-items:center;gap:14px;margin-top:18px}
+.search{flex:1;max-width:900px;display:flex;align-items:center;gap:8px;border:1px solid var(--line2);background:var(--bg2);border-radius:6px;padding:0 12px;height:40px}
+.search:focus-within{border-color:#8ea1b8}
+.search input{flex:1;background:none;border:0;outline:none;height:100%;font-size:15px}
+.gbtn{background:var(--green);border:0;color:#fff;border-radius:999px;padding:8px 18px;font-weight:600;font-size:15px;display:inline-flex;align-items:center;gap:6px}
+.gbtn:hover{background:var(--green-h)}
+.gbtn.sm{padding:5px 14px;font-size:14px}
+.obtn{background:transparent;border:1px solid var(--line2);color:var(--text);border-radius:999px;padding:6px 14px;font-size:14px;display:inline-flex;align-items:center;gap:6px}
+.obtn:hover{background:rgba(255,255,255,.07)}
+.obtn.dng{color:#ff8f88;border-color:#7a3a37}
+#bulkBar{display:flex;gap:8px;align-items:center;margin-top:14px;min-height:34px}
+#bulkBar .muted{color:var(--muted);font-size:13px}
+.ptWrap{flex:1;overflow:auto;margin-top:8px;background:var(--bg2);border-radius:8px}
+table.pt{width:100%;border-collapse:collapse}
+.pt th{position:sticky;top:0;background:var(--bg2);text-align:left;font-weight:600;padding:12px 10px;border-bottom:1px solid var(--line);font-size:15px;white-space:nowrap;user-select:none}
+.pt th.sort{cursor:pointer}
+.pt td{padding:10px;border-bottom:1px solid #313b49;font-size:15px;vertical-align:middle}
+.pt tr:hover td{background:rgba(255,255,255,.03)}
+.pt td.t a{color:var(--text);text-decoration:none;cursor:pointer}
+.pt td.t a:hover{text-decoration:underline;color:#fff}
+.pt .chk{width:42px;padding-left:16px}
+.pt input[type=checkbox]{width:17px;height:17px;accent-color:var(--green);cursor:pointer}
+.pt .acts{white-space:nowrap;text-align:right;opacity:0;transition:opacity .1s}
+.pt tr:hover .acts{opacity:1}
+.ibtn{background:none;border:0;color:var(--muted);padding:5px;border-radius:5px;display:inline-flex}
+.ibtn:hover{background:rgba(255,255,255,.1);color:#fff}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;border-radius:4px;padding:1px 7px;margin-left:8px;background:#3a4657;color:#e8edf2}
+.empty{padding:40px;text-align:center;color:var(--muted)}
+.storeNote{color:var(--muted);font-size:13px;display:flex;align-items:center;gap:6px}
+
+/* ========== IDE ========== */
+#ide{display:flex;flex-direction:column;height:100%}
+#ideTop{height:var(--top);display:flex;align-items:center;background:var(--bg);border-bottom:1px solid #000;padding:0 8px 0 6px;gap:2px;flex-shrink:0}
+.homebtn{width:34px;height:30px;display:grid;place-items:center;border-radius:6px;border:0;background:none;padding:0}
+.homebtn:hover{background:rgba(255,255,255,.08)}
+.homebtn .mk{width:24px;height:24px;border-radius:6px;background:var(--green);display:grid;place-items:center;font-family:Georgia,serif;font-weight:700;color:#fff;font-size:15px}
+.mbar{display:flex;gap:1px;margin-left:6px}
+.mbtn{background:none;border:0;padding:5px 9px;border-radius:5px;font-size:14px;color:var(--text)}
+.mbtn:hover,.mbtn.open{background:rgba(255,255,255,.1)}
+#titleBtn{position:absolute;left:50%;transform:translateX(-50%);background:none;border:0;font-weight:600;font-size:14px;padding:5px 10px;border-radius:5px;display:flex;align-items:center;gap:4px;max-width:34vw}
+#titleBtn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#titleBtn:hover{background:rgba(255,255,255,.1)}
+.tright{margin-left:auto;display:flex;align-items:center;gap:4px}
+.tbtn{background:none;border:0;padding:5px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--text)}
+.tbtn:hover{background:rgba(255,255,255,.1)}
+
+#ideBody{flex:1;display:flex;min-height:0}
+#rail{width:44px;background:var(--bg);display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:4px;flex-shrink:0;border-right:1px solid #11161d}
+.rbtn{width:32px;height:32px;border-radius:7px;border:0;background:none;color:var(--muted);display:grid;place-items:center;font-size:16px;font-weight:600}
+.rbtn:hover{color:#fff;background:rgba(255,255,255,.08)}
+.rbtn.on{background:var(--green);color:#fff}
+.rail-sp{flex:1}
+
+#side{width:280px;background:var(--bg2);display:flex;flex-direction:column;min-width:0;flex-shrink:0}
+.ph{display:flex;align-items:center;gap:4px;padding:8px 8px 8px 10px;font-weight:600;font-size:14px}
+.ph .t{display:flex;align-items:center;gap:4px;cursor:pointer;flex:1;white-space:nowrap}
+.ph .ibtn{padding:4px}
+#treeSec{display:flex;flex-direction:column;min-height:60px;flex:1}
+#tree{flex:1;overflow:auto;padding:2px 6px 8px;outline:none}
+#tree.drop{background:rgba(9,136,66,.18)}
+.node{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:5px;cursor:pointer;white-space:nowrap;font-size:14px;user-select:none;color:var(--text)}
+.node:hover{background:rgba(255,255,255,.06)}
+.node.sel{background:var(--green);color:#fff;font-weight:600}
+.node .ic{width:16px;display:grid;place-items:center;flex-shrink:0;opacity:.85}
+.node .ic svg{width:16px;height:16px}
+.node .nm{overflow:hidden;text-overflow:ellipsis;flex:1}
+.node .more{opacity:0;padding:1px 3px;border-radius:3px;background:none;border:0;color:inherit;font-size:15px;line-height:1}
+.node:hover .more,.node.sel .more{opacity:.9}
+.node .mainb{font-size:10px;border:1px solid currentColor;border-radius:3px;padding:0 4px;opacity:.7}
+#hres{height:7px;cursor:row-resize;background:#18202a;display:grid;place-items:center;flex-shrink:0}
+#hres::after{content:"";width:24px;height:3px;border-top:1px dotted #6b7686;border-bottom:1px dotted #6b7686}
+#hres:hover{background:#26303d}
+#outSec{height:34%;display:flex;flex-direction:column;min-height:34px}
+#outline{flex:1;overflow:auto;padding:0 8px 8px 22px}
+.ol{padding:3px 8px;font-size:13.5px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:4px;color:var(--text)}
+.ol:hover{background:rgba(255,255,255,.06)}
+.ol.cur{background:var(--green-soft);color:#fff;font-weight:600}
+.olnone{color:var(--dim);font-size:13px;padding:4px 8px}
+#searchPanel,#symPanel{flex:1;display:flex;flex-direction:column;min-height:0}
+.sp-in{margin:0 8px 8px;display:flex;flex-direction:column;gap:6px}
+.sp-in input{background:var(--bg);border:1px solid var(--line2);border-radius:5px;padding:6px 8px;outline:none}
+.sp-in input:focus{border-color:#8ea1b8}
+.sp-opts{display:flex;gap:10px;font-size:12px;color:var(--muted)}
+#searchRes{flex:1;overflow:auto;padding:0 6px 8px}
+.sr-f{font-size:12.5px;font-weight:600;color:var(--muted);padding:6px 6px 2px}
+.sr{font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;padding:3px 6px;border-radius:4px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr:hover{background:rgba(255,255,255,.07)}
+.sr b{background:#7a5d00;color:#fff;font-weight:400;border-radius:2px}
+.sr .ln{color:var(--dim);margin-right:6px}
+#symBody{flex:1;overflow:auto;padding:0 8px 8px}
+.symcat{font-size:12px;font-weight:600;color:var(--muted);margin:8px 2px 4px}
+.symrow{display:flex;flex-wrap:wrap;gap:4px}
+.sym{border:1px solid var(--line);background:var(--panel);border-radius:4px;min-width:32px;height:30px;padding:0 6px;font-size:15px;color:var(--text)}
+.sym:hover{border-color:var(--green);background:var(--green-soft)}
+
+.vres{width:7px;cursor:col-resize;background:var(--panel);flex-shrink:0;position:relative;display:grid;place-items:center}
+.vres::after{content:"";height:24px;width:3px;border-left:1px dotted #6b7686;border-right:1px dotted #6b7686}
+.vres:hover,.vres.drag{background:#3a4657}
+
+#edCol{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--ed-bg)}
+#tabs{display:flex;background:var(--panel);height:34px;align-items:flex-end;overflow-x:auto;overflow-y:hidden;flex-shrink:0;padding-left:4px;gap:2px}
+.tab{display:flex;align-items:center;gap:6px;height:30px;padding:0 6px 0 10px;font-size:13.5px;border-radius:6px 6px 0 0;background:#334052;color:var(--muted);cursor:pointer;white-space:nowrap;border:0}
+.tab:hover{color:var(--text)}
+.tab.on{background:var(--ed-bg);color:#fff}
+.tab .x{border:0;background:none;color:inherit;padding:1px 3px;border-radius:3px;opacity:.7;font-size:14px;line-height:1}
+.tab .x:hover{background:rgba(255,255,255,.12);opacity:1}
+#tb{display:flex;align-items:center;gap:1px;padding:4px 8px;background:var(--bg);border-bottom:1px solid #000;flex-wrap:wrap;min-height:38px;flex-shrink:0}
+.tb{background:none;border:0;color:#d4dae2;min-width:28px;height:28px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;font-size:13.5px}
+.tb:hover{background:rgba(255,255,255,.1);color:#fff}
+.tb.on{background:rgba(255,255,255,.14)}
+.tb svg{width:17px;height:17px;fill:currentColor}
+.tbs{width:1px;height:18px;background:#3a4452;margin:0 4px}
+.seg2{display:inline-flex;background:#2e3846;border-radius:999px;padding:2px;margin-left:auto}
+.seg2 button{border:0;background:none;color:var(--text);padding:3px 11px;border-radius:999px;font-size:13.5px;font-weight:600}
+.seg2 button.on{background:var(--green);color:#fff}
+#edHost{flex:1;position:relative;min-height:0}
+#edHost .CodeMirror{position:absolute;inset:0;height:auto;font-family:ui-monospace,"SFMono-Regular",Menlo,Monaco,Consolas,"Liberation Mono",monospace;font-size:var(--edfs,14px);line-height:1.6}
+#binView{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:#1a1f27;padding:20px;overflow:auto;color:var(--muted);font-size:13px}
+#binView img{max-width:100%;max-height:80%;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.5)}
+
+/* CodeMirror themes */
+.cm-s-sedark.CodeMirror{background:var(--ed-bg);color:#e1e5ea}
+.cm-s-sedark .CodeMirror-gutters{background:var(--ed-bg);border-right:0}
+.cm-s-sedark .CodeMirror-linenumber{color:#6f7a88}
+.cm-s-sedark .CodeMirror-cursor{border-left:2px solid #f2f4f7}
+.cm-s-sedark .CodeMirror-activeline-background{background:#1c2129}
+.cm-s-sedark .CodeMirror-activeline-gutter{background:#1c2129}
+.cm-s-sedark .CodeMirror-activeline-gutter .CodeMirror-linenumber{color:#d2d8df}
+.cm-s-sedark div.CodeMirror-selected,.cm-s-sedark.CodeMirror-focused div.CodeMirror-selected{background:#2d4a6e}
+.cm-s-sedark .cm-tag{color:#f0f2f5}
+.cm-s-sedark .cm-keyword,.cm-s-sedark .cm-builtin{color:#f08d49}
+.cm-s-sedark .cm-atom{color:#f5c518;font-style:italic}
+.cm-s-sedark .cm-comment{color:#b57edc}
+.cm-s-sedark .cm-bracket{color:#c6cdd5}
+.cm-s-sedark .cm-variable-2,.cm-s-sedark .cm-string{color:#7fd1a8}
+.cm-s-sedark .cm-number{color:#f5a97f}
+.cm-s-sedark .cm-error{color:#ff8f88;background:none}
+.cm-s-sedark .CodeMirror-matchingbracket{color:#fff!important;background:#3b4b60;outline:none}
+.cm-s-sedark .CodeMirror-foldmarker{color:#9fb0c3;background:#2a3442;border-radius:3px;text-shadow:none}
+.cm-s-selight.CodeMirror{background:#fff;color:#1f2933}
+.cm-s-selight .CodeMirror-gutters{background:#f4f5f7;border-right:1px solid #e3e6ea}
+.cm-s-selight .CodeMirror-activeline-background{background:#f1f6ff}
+.cm-s-selight .cm-tag{color:#1f2933}
+.cm-s-selight .cm-keyword,.cm-s-selight .cm-builtin{color:#b3540d}
+.cm-s-selight .cm-atom{color:#8a6100;font-style:italic}
+.cm-s-selight .cm-comment{color:#8b3fbf}
+.cm-s-selight .cm-variable-2,.cm-s-selight .cm-string{color:#0b7a46}
+body.edlight #edCol{background:#fff}
+body.edlight .tab.on{background:#fff;color:#1f2933}
+.CodeMirror-foldgutter{width:12px}
+.CodeMirror-foldgutter-open,.CodeMirror-foldgutter-folded{color:#7c8794;cursor:pointer;font-size:11px}
+.CodeMirror-foldgutter-open:after{content:"▾"}
+.CodeMirror-foldgutter-folded:after{content:"▸"}
+.err-line{background:rgba(224,82,74,.18)!important}
+.warn-line{background:rgba(217,154,30,.14)!important}
+.CodeMirror-hints{background:#232b37;border:1px solid #3b4655;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;z-index:200;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+.CodeMirror-hint{color:#e1e5ea;padding:2px 8px}
+li.CodeMirror-hint-active{background:var(--green);color:#fff}
+.CodeMirror-dialog{background:#232b37;color:#e1e5ea}
+.CodeMirror-dialog input{color:#fff}
+
+/* Visual mode */
+.CodeMirror.visual .CodeMirror-lines{font-family:"Lora",Georgia,"Times New Roman",serif;font-size:calc(var(--edfs,14px) + 2px)}
+.vis-h{font-family:-apple-system,"Segoe UI",Roboto,sans-serif;font-weight:700;cursor:text}
+.vis-chapter{font-size:1.7em}.vis-section{font-size:1.4em}.vis-subsection{font-size:1.2em}.vis-subsubsection{font-size:1.07em}.vis-paragraph{font-size:1em}
+.vis-math{cursor:text;padding:0 1px;border-radius:3px}
+.vis-math:hover{background:rgba(77,143,232,.14)}
+.vis-dmath{display:inline-block;width:100%;text-align:center;padding:4px 0;cursor:text;border-radius:4px}
+.vis-dmath:hover{background:rgba(77,143,232,.10)}
+.vis-chip{font:12px/1.5 -apple-system,"Segoe UI",sans-serif;background:#2c3c52;color:#cfe1ff;border-radius:4px;padding:1px 6px;cursor:text;white-space:nowrap}
+body.edlight .vis-chip{background:#e6eefb;color:#1d4f9a}
+.vis-img{display:inline-block;cursor:text;max-width:100%}
+.vis-img img{max-width:min(420px,90%);max-height:260px;background:#fff;border-radius:3px;vertical-align:middle}
+.vis-bullet{cursor:text;font-weight:700;padding:0 4px}
+.vis-b{font-weight:700}.vis-i{font-style:italic}.vis-u{text-decoration:underline}.vis-tt{font-family:ui-monospace,Menlo,monospace}
+.vis-pre{opacity:.6}
+.katex{font-size:1.08em}
+
+/* PDF */
+#pdfCol{flex:1;display:flex;flex-direction:column;min-width:0;background:#3f4958}
+#pdfBar{display:flex;align-items:center;gap:4px;padding:4px 8px;background:var(--bg);border-bottom:1px solid #000;min-height:38px;flex-shrink:0;flex-wrap:nowrap;overflow:hidden}
+.recomp{display:inline-flex;border-radius:999px;overflow:hidden;flex-shrink:0}
+.recomp button{background:var(--green);border:0;color:#fff;font-weight:600;font-size:14px;padding:4px 14px;display:inline-flex;align-items:center;gap:7px}
+.recomp button:hover{background:var(--green-h)}
+.recomp .dd{padding:4px 9px 4px 7px;border-left:1px solid rgba(255,255,255,.25)}
+.spin{width:12px;height:12px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .8s linear infinite;display:none}
+.busy .spin{display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+.pbtn{background:none;border:0;color:#d4dae2;min-width:28px;height:28px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;position:relative;padding:0 4px;flex-shrink:0}
+.pbtn:hover{background:rgba(255,255,255,.1);color:#fff}
+.pbtn svg{width:18px;height:18px;fill:currentColor}
+.badge{position:absolute;top:0;right:-2px;background:var(--red);color:#fff;border-radius:8px;font-size:10px;padding:0 4px;line-height:14px;display:none;font-weight:700}
+.badge.warn{background:var(--amber)}
+#pdfStatus{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1;padding-left:6px}
+.pnav{display:flex;align-items:center;gap:2px;flex-shrink:0}
+#pageIn{width:38px;height:26px;text-align:center;background:var(--bg2);border:1px solid var(--line2);border-radius:5px;outline:none}
+#pageTot{font-size:13px;color:var(--muted);margin:0 6px 0 4px}
+#zoomSel{background:none;border:0;color:var(--text);font-size:13.5px;padding:2px;cursor:pointer;outline:none}
+#zoomSel option{background:var(--bg2)}
+#pdfBody{flex:1;position:relative;min-height:0}
+#pdfViewer{position:absolute;inset:0;overflow:auto;padding:14px 0 24px}
+#pdfPages{display:flex;flex-direction:column;align-items:center;gap:12px;min-width:min-content;padding:0 14px}
+.pdfpage{background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.45);display:block}
+#pdfViewer.dark .pdfpage{filter:invert(.92) hue-rotate(180deg)}
+#pdfFrame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#3f4958;display:none}
+#pdfEmpty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:#dfe5ec;text-align:center;padding:20px}
+#logs{position:absolute;inset:0;background:var(--bg2);overflow:auto;display:none;padding:12px}
+#logs.on{display:block}
+.lg{border:1px solid var(--line);border-left:4px solid var(--red);background:var(--panel);border-radius:6px;margin-bottom:8px;padding:9px 11px;cursor:pointer}
+.lg.w{border-left-color:var(--amber)}.lg.i{border-left-color:var(--blue)}
+.lg .t{font-weight:600;font-size:13.5px}
+.lg .s{font-size:12px;color:var(--muted);margin-top:2px}
+.lg pre{margin:6px 0 0;font-size:11.5px;white-space:pre-wrap;color:#c9d1da;max-height:140px;overflow:auto}
+#rawLog{white-space:pre-wrap;font:11px/1.4 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);border:1px solid var(--line);padding:8px;border-radius:5px;color:#c9d1da}
+
+body.l-editor #pdfCol,body.l-editor #res2{display:none}
+body.l-pdf #edCol,body.l-pdf #res2{display:none}
+body.noside #side,body.noside #res1{display:none}
+
+/* dropdown menus */
+.menu{position:fixed;background:#232b37;border:1px solid #3b4655;border-radius:8px;box-shadow:0 10px 28px rgba(0,0,0,.55);padding:5px;z-index:120;min-width:220px;display:none;max-height:80vh;overflow:auto}
+.menu.on{display:block}
+.mi{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;text-align:left;padding:6px 10px;border-radius:5px;font-size:14px;color:var(--text);white-space:nowrap}
+.mi:hover{background:var(--green);color:#fff}
+.mi .k{margin-left:auto;color:var(--dim);font-size:12px;padding-left:18px}
+.mi:hover .k{color:#d9f2e2}
+.mi .ck{width:14px;text-align:center}
+.mi.dis{opacity:.45;pointer-events:none}
+.msep{border-top:1px solid #3b4655;margin:5px 2px}
+.mhd{font-size:11.5px;color:var(--dim);padding:6px 10px 2px;font-weight:600}
+
+/* modals */
+.mwrap{position:fixed;inset:0;background:rgba(5,8,12,.6);display:none;align-items:center;justify-content:center;z-index:150;padding:16px}
+.mwrap.on{display:flex}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:10px;width:min(640px,100%);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 18px 50px rgba(0,0,0,.6)}
+.mh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;font-weight:600;font-size:16px}
+.mb{padding:16px 18px;overflow:auto;font-size:14px}
+.mf{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field label{font-size:13px;color:var(--muted)}
+.field input,.field select{background:var(--bg2);border:1px solid var(--line2);border-radius:6px;padding:7px 10px;outline:none}
+.field input:focus,.field select:focus{border-color:#8ea1b8}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #354050}
+.srow select{background:var(--bg2);border:1px solid var(--line2);border-radius:6px;padding:5px 8px;min-width:170px}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.tcard{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--bg2);text-align:left}
+.tcard:hover{border-color:var(--green);background:var(--green-soft)}
+.tcard b{display:block;margin-bottom:3px;font-size:14px}
+.tcard span{font-size:12.5px;color:var(--muted)}
+.xbtn{background:none;border:0;font-size:22px;line-height:1;color:var(--muted)}
+.xbtn:hover{color:#fff}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--bg);padding:1px 5px;border-radius:4px;font-size:.9em}
+table.kt{width:100%;border-collapse:collapse}
+.kt td{padding:6px 4px;border-bottom:1px solid #354050;font-size:13.5px}
+
+#busy{position:fixed;inset:0;background:rgba(5,8,12,.7);display:none;align-items:center;justify-content:center;z-index:300;flex-direction:column;gap:12px;text-align:center;padding:20px}
+#busy.on{display:flex}
+#busyBar{width:300px;height:6px;background:rgba(255,255,255,.18);border-radius:3px;overflow:hidden}
+#busyBar div{height:100%;width:0;background:#5fd07f;transition:width .2s}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#11161d;border:1px solid #3b4655;color:#fff;padding:9px 16px;border-radius:7px;font-size:13.5px;z-index:310;display:none;max-width:90vw}
+#toast.on{display:block}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#465264;border-radius:6px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-track{background:transparent}
+
+@media (max-width:900px){
+  #dashNav{display:none}
+  #dashMain{border-radius:0;padding:16px}
+  .hide-sm{display:none!important}
+  .mbar .mbtn:nth-child(n+4){display:none}
+  #side{position:fixed;left:44px;top:var(--top);bottom:0;z-index:60;box-shadow:6px 0 20px rgba(0,0,0,.5)}
+  #res1{display:none}
+  .pt .own{display:none}
+}
+</style>
+</head>
+<body class="l-both">
+
+<!-- ======================= DASHBOARD ======================= -->
+<div id="dash" hidden>
+  <div id="dashTop">
+    <a onclick="openNewProject()">Templates</a>
+    <a onclick="openHelp()">Help</a>
+  </div>
+  <div id="dashBody">
+    <nav id="dashNav">
+      <a class="logo"><span class="mk">S</span><span>Schol<span class="acc">Editor</span></span></a>
+      <button class="dn" data-view="all"><svg class="i" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>All projects<span class="cnt" id="c-all"></span></button>
+      <button class="dn" data-view="mine"><svg class="i" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Your workspace</button>
+      <button class="dn" data-view="archived"><svg class="i" viewBox="0 0 24 24"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z"/></svg>Archive<span class="cnt" id="c-archived"></span></button>
+      <div class="dsep"></div>
+      <div class="dtitle">YOUR TAGS</div>
+      <button class="dn" onclick="newTag()"><span style="width:18px;text-align:center;font-size:18px">+</span>New tag</button>
+      <div id="tagList"></div>
+      <button class="dn" data-view="untagged"><i>Uncategorized</i><span class="cnt" id="c-untagged"></span></button>
+      <div style="flex:1"></div>
+      <button class="dn" data-view="trash"><svg class="i" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>Trash<span class="cnt" id="c-trash"></span></button>
+      <button class="dn" onclick="openSettings()"><svg class="i" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>Settings</button>
+      <button class="dn" onclick="openHelp()"><svg class="i" viewBox="0 0 24 24"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>Help</button>
+    </nav>
+    <main id="dashMain">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <h1 id="viewTitle">All projects</h1>
+        <span class="storeNote hide-sm">Projects are saved in this browser</span>
+      </div>
+      <div class="dashRow">
+        <label class="search"><svg class="i" viewBox="0 0 24 24" style="opacity:.7"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg><input id="pSearch" placeholder="Search in all projects…" oninput="renderDash()"></label>
+        <button class="gbtn" style="margin-left:auto" onclick="openMenu('newProjMenu', this)">New project</button>
+      </div>
+      <div id="bulkBar"></div>
+      <div class="ptWrap">
+        <table class="pt">
+          <thead><tr>
+            <th class="chk"><input type="checkbox" id="chkAll" onchange="checkAll(this.checked)"></th>
+            <th class="sort" onclick="setSort('name')">Title <span id="s-name"></span></th>
+            <th class="own">Owner</th>
+            <th class="sort" onclick="setSort('updated')">Last modified <span id="s-updated"></span></th>
+            <th></th>
+          </tr></thead>
+          <tbody id="pRows"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ======================= IDE ======================= -->
+<div id="ide" hidden>
+  <div id="ideTop">
+    <button class="homebtn" title="Back to projects" onclick="goDash()"><span class="mk">S</span></button>
+    <div class="mbar">
+      <button class="mbtn" onclick="openMenu('mFile',this)">File</button>
+      <button class="mbtn" onclick="openMenu('mEdit',this)">Edit</button>
+      <button class="mbtn" onclick="openMenu('mInsert',this)">Insert</button>
+      <button class="mbtn" onclick="openMenu('mView',this)">View</button>
+      <button class="mbtn" onclick="openMenu('mFormat',this)">Format</button>
+      <button class="mbtn" onclick="openMenu('mHelp',this)">Help</button>
+    </div>
+    <button id="titleBtn" onclick="openMenu('mTitle',this)"><span id="projTitle">Project</span>▾</button>
+    <div class="tright">
+      <button class="tbtn hide-sm" onclick="openMenu('mLayout',this)"><svg class="i" viewBox="0 0 24 24"><path d="M3 5v14h18V5H3zm8 12H5V7h6v10zm8 0h-6V7h6v10z"/></svg>Layout</button>
+      <button class="gbtn sm" onclick="openMenu('mExport',this)"><svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>Export</button>
+    </div>
+  </div>
+
+  <div id="ideBody">
+    <div id="rail">
+      <button class="rbtn on" id="r-files" title="File tree" onclick="railTo('files')"><svg class="i" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></button>
+      <button class="rbtn" id="r-search" title="Search the project" onclick="railTo('search')"><svg class="i" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></button>
+      <button class="rbtn" id="r-sym" title="Math symbols" onclick="railTo('sym')">Ω</button>
+      <div class="rail-sp"></div>
+      <button class="rbtn" title="Help" onclick="openHelp()"><svg class="i" viewBox="0 0 24 24"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg></button>
+      <button class="rbtn" title="Settings" onclick="openSettings()"><svg class="i" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></button>
+    </div>
+
+    <div id="side">
+      <div id="filesPanel" style="display:flex;flex-direction:column;flex:1;min-height:0">
+        <div id="treeSec">
+          <div class="ph">
+            <span class="t" onclick="toggleTreeSec()"><span id="treeCar">▾</span> File tree</span>
+            <button class="ibtn" title="New file" onclick="newFile()"><svg class="i" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
+            <button class="ibtn" title="New folder" onclick="newFolder()"><svg class="i" viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-1 8h-3v3h-2v-3h-3v-2h3V9h2v3h3v2z"/></svg></button>
+            <button class="ibtn" title="Upload" onclick="uploadToProject()"><svg class="i" viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg></button>
+            <button class="ibtn" title="Close" onclick="toggleSide()"><svg class="i" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+          </div>
+          <div id="tree" tabindex="0"></div>
+        </div>
+        <div id="hres"></div>
+        <div id="outSec">
+          <div class="ph"><span class="t" onclick="toggleOutSec()"><span id="outCar">▾</span> File outline</span></div>
+          <div id="outline"></div>
+        </div>
+      </div>
+      <div id="searchPanel" hidden>
+        <div class="ph"><span class="t">Search</span><button class="ibtn" title="Close" onclick="toggleSide()"><svg class="i" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>
+        <div class="sp-in">
+          <input id="ps" placeholder="Search in all project files" oninput="projectSearch()">
+          <div class="sp-opts"><label><input type="checkbox" id="psCase" onchange="projectSearch()"> Match case</label><label><input type="checkbox" id="psRe" onchange="projectSearch()"> Regex</label></div>
+        </div>
+        <div id="searchRes"></div>
+      </div>
+      <div id="symPanel" hidden>
+        <div class="ph"><span class="t">Math symbols</span><button class="ibtn" title="Close" onclick="toggleSide()"><svg class="i" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>
+        <div id="symBody"></div>
+      </div>
+    </div>
+    <div class="vres" id="res1"></div>
+
+    <div id="edCol">
+      <div id="tabs"></div>
+      <div id="tb">
+        <button class="tb" title="Undo (Ctrl+Z)" onclick="cm.undo();cm.focus()"><svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
+        <button class="tb" title="Redo (Ctrl+Y)" onclick="cm.redo();cm.focus()"><svg viewBox="0 0 24 24"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
+        <span class="tbs"></span>
+        <button class="tb" title="Section level" onclick="openMenu('mSection',this)" style="font-weight:700">Tт ▾</button>
+        <span class="tbs"></span>
+        <button class="tb" title="Bold (Ctrl+B)" onclick="wrap('\\textbf{','}')"><b>B</b></button>
+        <button class="tb" title="Italic (Ctrl+I)" onclick="wrap('\\textit{','}')"><i style="font-family:Georgia,serif">I</i></button>
+        <span class="tbs"></span>
+        <button class="tb" title="Insert math" onclick="openMenu('mMath',this)">√x ▾</button>
+        <button class="tb" title="Symbol palette" onclick="railTo('sym')">Ω</button>
+        <span class="tbs"></span>
+        <button class="tb" title="Insert link" onclick="wrap('\\href{https://}{','}')"><svg viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg></button>
+        <button class="tb" title="Cross-reference \ref" onclick="insertAndHint('\\ref{','}')"><svg viewBox="0 0 24 24"><path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16z"/></svg></button>
+        <button class="tb" title="Citation \cite" onclick="insertAndHint('\\cite{','}')"><svg viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg></button>
+        <button class="tb" title="Insert figure" onclick="insFigure()"><svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></button>
+        <button class="tb" title="Insert table" onclick="openM('mTable')"><svg viewBox="0 0 24 24"><path d="M10 10.02h5V21h-5zM17 21h3c1.1 0 2-.9 2-2v-9h-5v11zm3-18H5c-1.1 0-2 .9-2 2v3h19V5c0-1.1-.9-2-2-2zM3 19c0 1.1.9 2 2 2h3V10H3v9z"/></svg></button>
+        <button class="tb" title="Lists" onclick="openMenu('mList',this)"><svg viewBox="0 0 24 24"><path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/></svg>▾</button>
+        <button class="tb" title="Toggle comment (Ctrl+/)" onclick="cm.toggleComment();cm.focus()" style="font-family:monospace;font-weight:700">%</button>
+        <div class="seg2"><button id="modeCode" class="on" onclick="setEdMode('code')">Code</button><button id="modeVis" onclick="setEdMode('visual')">Visual</button></div>
+        <button class="tb" title="Search & replace (Ctrl+F)" onclick="cm.execCommand('replace')" style="margin-left:6px"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></button>
+      </div>
+      <div id="edHost"><div id="binView"></div></div>
+    </div>
+    <div class="vres" id="res2"></div>
+
+    <div id="pdfCol">
+      <div id="pdfBar">
+        <div class="recomp" id="recomp">
+          <button onclick="compile()" title="Recompile (Ctrl+S / Ctrl+Enter)"><span class="spin"></span><span id="recLbl">Recompile</span></button>
+          <button class="dd" onclick="openMenu('mRecomp',this)" title="Compile options">▾</button>
+        </div>
+        <button class="pbtn" onclick="toggleLogs()" title="Logs and output files"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg><span class="badge" id="logBadge"></span></button>
+        <button class="pbtn" onclick="downloadPdf()" title="Download PDF"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></button>
+        <span id="pdfStatus"></span>
+        <div class="pnav">
+          <button class="pbtn" onclick="togglePdfDark()" title="Dark mode PDF"><svg viewBox="0 0 24 24"><path d="M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 2 6.48 2 12s4.48 10 10 10zm1-17.93c3.94.49 7 3.85 7 7.93s-3.05 7.44-7 7.93V4.07z"/></svg></button>
+          <button class="pbtn hide-sm" onclick="gotoPage(curPage-1)" title="Previous page"><svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg></button>
+          <button class="pbtn hide-sm" onclick="gotoPage(curPage+1)" title="Next page"><svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button>
+          <input id="pageIn" value="1" onkeydown="if(event.key==='Enter')gotoPage(+this.value)"><span id="pageTot">/ 1</span>
+          <button class="pbtn hide-sm" onclick="zoomBy(-0.1)" title="Zoom out"><svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg></button>
+          <button class="pbtn hide-sm" onclick="zoomBy(0.1)" title="Zoom in"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
+          <select id="zoomSel" onchange="setZoom(this.value)">
+            <option value="fit">Fit width</option><option value="page">Fit page</option>
+            <option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option>
+            <option value="custom" hidden id="zoomCustom">88%</option>
+          </select>
+        </div>
+      </div>
+      <div id="pdfBody">
+        <div id="pdfEmpty"><svg viewBox="0 0 24 24" style="width:46px;height:46px;fill:#9fb0c3"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg><div style="font-size:15px">Press <b>Recompile</b> to build your PDF</div><div style="font-size:12.5px;opacity:.75">Ctrl + S or Ctrl + Enter</div></div>
+        <div id="pdfViewer" hidden><div id="pdfPages"></div></div>
+        <iframe id="pdfFrame" name="pdfFrame" title="PDF preview"></iframe>
+        <div id="logs"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= MENUS ======================= -->
+<div class="menu" id="newProjMenu">
+  <button class="mi" onclick="newFromTemplate('blank')">Blank project</button>
+  <button class="mi" onclick="newFromTemplate('article')">Example project</button>
+  <button class="mi" onclick="pickFile('.zip',importZip)">Upload project (.zip)</button>
+  <button class="mi" onclick="pickFile('.docx',importDocx)">Import Word document (.docx)</button>
+  <div class="msep"></div><div class="mhd">Templates</div>
+  <div id="tplMenuItems"></div>
+  <button class="mi" onclick="openNewProject()">View all templates…</button>
+</div>
+<div class="menu" id="mFile">
+  <button class="mi" onclick="newFile()">New file</button>
+  <button class="mi" onclick="newFolder()">New folder</button>
+  <button class="mi" onclick="uploadToProject()">Upload file</button>
+  <div class="msep"></div>
+  <button class="mi" onclick="newFromTemplate('blank')">New project…</button>
+  <button class="mi" onclick="copyProject(project.id,true)">Make a copy</button>
+  <button class="mi" onclick="pickFile('.zip',importZip)">Upload project (.zip)</button>
+  <button class="mi" onclick="pickFile('.docx',importDocx)">Import Word (.docx)</button>
+  <div class="msep"></div>
+  <button class="mi" onclick="downloadZip()">Download as source (.zip)</button>
+  <button class="mi" onclick="downloadPdf()">Download as PDF</button>
+  <button class="mi" onclick="exportDocx()">Export to Word (.docx)</button>
+  <button class="mi" onclick="openInOverleaf()">Open in Overleaf</button>
+  <div class="msep"></div>
+  <button class="mi" onclick="wordCount()">Word count</button>
+  <button class="mi" onclick="openSettings()">Settings</button>
+  <button class="mi" onclick="goDash()">Back to projects</button>
+</div>
+<div class="menu" id="mEdit">
+  <button class="mi" onclick="cm.undo()">Undo<span class="k">Ctrl+Z</span></button>
+  <button class="mi" onclick="cm.redo()">Redo<span class="k">Ctrl+Y</span></button>
+  <div class="msep"></div>
+  <button class="mi" onclick="cm.execCommand('find')">Find<span class="k">Ctrl+F</span></button>
+  <button class="mi" onclick="cm.execCommand('replace')">Find and replace<span class="k">Ctrl+Shift+F</span></button>
+  <button class="mi" onclick="railTo('search')">Search in project</button>
+  <button class="mi" onclick="cm.execCommand('jumpToLine')">Go to line<span class="k">Ctrl+G</span></button>
+  <div class="msep"></div>
+  <button class="mi" onclick="cm.execCommand('selectAll')">Select all<span class="k">Ctrl+A</span></button>
+  <button class="mi" onclick="cm.toggleComment()">Toggle comment<span class="k">Ctrl+/</span></button>
+  <button class="mi" onclick="cm.execCommand('foldAll')">Fold all</button>
+  <button class="mi" onclick="cm.execCommand('unfoldAll')">Unfold all</button>
+</div>
+<div class="menu" id="mInsert">
+  <button class="mi" onclick="wrap('$','$')">Inline math</button>
+  <button class="mi" onclick="wrap('\\[\n  ','\n\\]')">Display math</button>
+  <button class="mi" onclick="insEnv('equation','\\label{eq:}')">Numbered equation</button>
+  <button class="mi" onclick="insEnv('align','a &= b \\\\\n  c &= d')">Aligned equations</button>
+  <button class="mi" onclick="railTo('sym')">Symbol…</button>
+  <div class="msep"></div>
+  <button class="mi" onclick="insFigure()">Figure</button>
+  <button class="mi" onclick="openM('mTable')">Table…</button>
+  <button class="mi" onclick="insEnv('itemize','\\item ')">Bulleted list</button>
+  <button class="mi" onclick="insEnv('enumerate','\\item ')">Numbered list</button>
+  <div class="msep"></div>
+  <button class="mi" onclick="insertAndHint('\\cite{','}')">Citation</button>
+  <button class="mi" onclick="insertAndHint('\\ref{','}')">Cross-reference</button>
+  <button class="mi" onclick="wrap('\\footnote{','}')">Footnote</button>
+  <button class="mi" onclick="wrap('\\href{https://}{','}')">Link</button>
+  <button class="mi" onclick="insEnv('theorem','')">Theorem</button>
+  <button class="mi" onclick="insEnv('proof','')">Proof</button>
+</div>
+<div class="menu" id="mView">
+  <button class="mi" onclick="setLayout('both')"><span class="ck" id="ck-both"></span>Editor &amp; PDF</button>
+  <button class="mi" onclick="setLayout('editor')"><span class="ck" id="ck-editor"></span>Editor only</button>
+  <button class="mi" onclick="setLayout('pdf')"><span class="ck" id="ck-pdf"></span>PDF only</button>
+  <div class="msep"></div>
+  <button class="mi" onclick="toggleSide()">Show / hide sidebar</button>
+  <button class="mi" onclick="setEdMode(visual?'code':'visual')">Switch Code / Visual</button>
+  <button class="mi" onclick="togglePdfDark()">PDF dark mode</button>
+  <div class="msep"></div>
+  <button class="mi" onclick="zoomBy(0.1)">Zoom in</button>
+  <button class="mi" onclick="zoomBy(-0.1)">Zoom out</button>
+  <button class="mi" onclick="setZoom('fit')">Fit to width</button>
+  <button class="mi" onclick="setZoom('page')">Fit to page</button>
+</div>
+<div class="menu" id="mFormat">
+  <button class="mi" onclick="wrap('\\textbf{','}')">Bold<span class="k">Ctrl+B</span></button>
+  <button class="mi" onclick="wrap('\\textit{','}')">Italic<span class="k">Ctrl+I</span></button>
+  <button class="mi" onclick="wrap('\\underline{','}')">Underline</button>
+  <button class="mi" onclick="wrap('\\texttt{','}')">Monospace</button>
+  <button class="mi" onclick="wrap('\\emph{','}')">Emphasis</button>
+  <div class="msep"></div>
+  <button class="mi" onclick="insSection('section')">Section</button>
+  <button class="mi" onclick="insSection('subsection')">Subsection</button>
+  <button class="mi" onclick="insSection('subsubsection')">Subsubsection</button>
+  <div class="msep"></div>
+  <button class="mi" onclick="cm.execCommand('indentMore')">Increase indent</button>
+  <button class="mi" onclick="cm.execCommand('indentLess')">Decrease indent</button>
+</div>
+<div class="menu" id="mHelp">
+  <button class="mi" onclick="openHelp()">Keyboard shortcuts</button>
+  <button class="mi" onclick="openCheat()">LaTeX quick reference</button>
+  <button class="mi" onclick="openAbout()">About ScholEditor</button>
+</div>
+<div class="menu" id="mTitle">
+  <button class="mi" onclick="renameProject()">Rename</button>
+  <button class="mi" onclick="copyProject(project.id,true)">Make a copy</button>
+  <button class="mi" onclick="downloadZip()">Download source (.zip)</button>
+  <button class="mi" onclick="downloadPdf()">Download PDF</button>
+</div>
+<div class="menu" id="mLayout">
+  <button class="mi" onclick="setLayout('both')"><span class="ck" id="lk-both"></span>Editor &amp; PDF</button>
+  <button class="mi" onclick="setLayout('editor')"><span class="ck" id="lk-editor"></span>Editor only</button>
+  <button class="mi" onclick="setLayout('pdf')"><span class="ck" id="lk-pdf"></span>PDF only</button>
+  <div class="msep"></div>
+  <button class="mi" onclick="toggleSide()">Show / hide sidebar</button>
+</div>
+<div class="menu" id="mExport">
+  <button class="mi" onclick="downloadPdf()">📕 PDF</button>
+  <button class="mi" onclick="exportDocx()">📝 Word document (.docx)</button>
+  <button class="mi" onclick="downloadZip()">🗜 Source files (.zip)</button>
+  <button class="mi" onclick="openInOverleaf()">🌿 Open in Overleaf</button>
+</div>
+<div class="menu" id="mRecomp">
+  <div class="mhd">Auto compile</div>
+  <button class="mi" onclick="setSetting('auto','on')"><span class="ck" id="ac-on"></span>On</button>
+  <button class="mi" onclick="setSetting('auto','off')"><span class="ck" id="ac-off"></span>Off</button>
+  <div class="msep"></div><div class="mhd">Compiler</div>
+  <button class="mi" onclick="setSetting('compiler','pdflatex')"><span class="ck" id="cc-pdflatex"></span>pdfLaTeX</button>
+  <button class="mi" onclick="setSetting('compiler','xelatex')"><span class="ck" id="cc-xelatex"></span>XeLaTeX</button>
+  <button class="mi" onclick="setSetting('compiler','lualatex')"><span class="ck" id="cc-lualatex"></span>LuaLaTeX</button>
+  <div class="msep"></div>
+  <button class="mi" onclick="compile()">Recompile</button>
+  <button class="mi" onclick="resetPdf()">Clear output</button>
+</div>
+<div class="menu" id="mSection">
+  <button class="mi" onclick="insSection('chapter')">Chapter</button>
+  <button class="mi" onclick="insSection('section')">Section</button>
+  <button class="mi" onclick="insSection('subsection')">Subsection</button>
+  <button class="mi" onclick="insSection('subsubsection')">Subsubsection</button>
+  <button class="mi" onclick="insSection('paragraph')">Paragraph</button>
+</div>
+<div class="menu" id="mMath">
+  <button class="mi" onclick="wrap('$','$')">Inline math<span class="k">$…$</span></button>
+  <button class="mi" onclick="wrap('\\[\n  ','\n\\]')">Display math<span class="k">\[…\]</span></button>
+  <button class="mi" onclick="insEnv('equation','\\label{eq:}')">Numbered equation</button>
+  <button class="mi" onclick="insEnv('align','a &= b \\\\\n  c &= d')">Align</button>
+  <button class="mi" onclick="insertSnippet('\\begin{pmatrix}\n  $0a & b \\\\\n  c & d\n\\end{pmatrix}')">Matrix</button>
+  <button class="mi" onclick="insertSnippet('\\begin{cases}\n  $0a & \\text{if } x > 0 \\\\\n  b & \\text{otherwise}\n\\end{cases}')">Cases</button>
+</div>
+<div class="menu" id="mList">
+  <button class="mi" onclick="insEnv('itemize','\\item ')">Bulleted list</button>
+  <button class="mi" onclick="insEnv('enumerate','\\item ')">Numbered list</button>
+  <button class="mi" onclick="insEnv('description','\\item[Term] ')">Description list</button>
+</div>
+<div class="menu" id="mNode">
+  <button class="mi" onclick="nodeAct('open')">Open</button>
+  <button class="mi" onclick="nodeAct('rename')">Rename</button>
+  <button class="mi" onclick="nodeAct('main')" id="nmMain">Set as main document</button>
+  <button class="mi" onclick="nodeAct('download')">Download</button>
+  <button class="mi" onclick="nodeAct('delete')">Delete</button>
+</div>
+<div class="menu" id="mTagFor"></div>
+
+<!-- ======================= MODALS ======================= -->
+<div class="mwrap" id="mNew"><div class="modal" style="width:min(820px,100%)">
+  <div class="mh">New project <button class="xbtn" onclick="closeM('mNew')">×</button></div>
+  <div class="mb">
+    <div class="tgrid" id="tplGrid"></div>
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+      <button class="obtn" onclick="pickFile('.zip',importZip)">Upload project / template (.zip)</button>
+      <button class="obtn" onclick="pickFile('.docx',importDocx)">Import Word (.docx)</button>
+    </div>
+  </div>
+</div></div>
+
+<div class="mwrap" id="mTable"><div class="modal" style="width:min(380px,100%)">
+  <div class="mh">Insert table <button class="xbtn" onclick="closeM('mTable')">×</button></div>
+  <div class="mb">
+    <div class="field"><label>Rows</label><input type="number" id="tRows" value="3" min="1" max="60"></div>
+    <div class="field"><label>Columns</label><input type="number" id="tCols" value="3" min="1" max="20"></div>
+    <div class="field"><label>Style</label><select id="tStyle"><option value="booktabs">Professional (booktabs)</option><option value="grid">Grid lines</option></select></div>
+  </div>
+  <div class="mf"><button class="obtn" onclick="closeM('mTable')">Cancel</button><button class="gbtn sm" onclick="insTable()">Insert</button></div>
+</div></div>
+
+<div class="mwrap" id="mSettings"><div class="modal" style="width:min(520px,100%)">
+  <div class="mh">Settings <button class="xbtn" onclick="closeM('mSettings')">×</button></div>
+  <div class="mb">
+    <div class="mhd" style="padding-left:0">Compiler</div>
+    <div class="srow">Compiler<select data-s="compiler"><option value="pdflatex">pdfLaTeX</option><option value="xelatex">XeLaTeX</option><option value="lualatex">LuaLaTeX</option></select></div>
+    <div class="srow">Main document<select id="setMain"></select></div>
+    <div class="srow">Compile server<select data-s="server"><option value="auto">Auto (recommended)</option><option value="ytotech">LaTeX-on-HTTP only</option><option value="texlive">TeXLive.net only</option></select></div>
+    <div class="srow">Auto compile<select data-s="auto"><option value="off">Off</option><option value="on">On</option></select></div>
+    <div class="mhd" style="padding-left:0;margin-top:12px">Editor</div>
+    <div class="srow">Theme<select data-s="theme"><option value="sedark">Dark</option><option value="selight">Light</option></select></div>
+    <div class="srow">Font size<select data-s="font"><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>18</option></select></div>
+    <div class="srow">Auto-complete<select data-s="hints"><option value="on">On</option><option value="off">Off</option></select></div>
+    <div class="srow">Auto-close brackets<select data-s="brackets"><option value="on">On</option><option value="off">Off</option></select></div>
+    <div class="srow">Spell check<select data-s="spell"><option value="off">Off</option><option value="on">On (browser)</option></select></div>
+  </div>
+  <div class="mf"><button class="gbtn sm" onclick="closeM('mSettings')">Done</button></div>
+</div></div>
+
+<div class="mwrap" id="mInfo"><div class="modal" style="width:min(580px,100%)">
+  <div class="mh"><span id="infoTitle">Info</span> <button class="xbtn" onclick="closeM('mInfo')">×</button></div>
+  <div class="mb" id="infoBody"></div>
+  <div class="mf"><button class="gbtn sm" onclick="closeM('mInfo')">OK</button></div>
+</div></div>
+
+<div class="mwrap" id="mAsk"><div class="modal" style="width:min(440px,100%)">
+  <div class="mh"><span id="askTitle"></span> <button class="xbtn" onclick="askDone(null)">×</button></div>
+  <div class="mb"><div class="field" style="margin:0"><label id="askLabel"></label><input id="askIn" onkeydown="if(event.key==='Enter')askDone(this.value)"></div></div>
+  <div class="mf"><button class="obtn" onclick="askDone(null)">Cancel</button><button class="gbtn sm" id="askOk" onclick="askDone($('askIn').value)">OK</button></div>
+</div></div>
+
+<div id="busy"><div id="busyMsg" style="font-size:15px">Working…</div><div id="busyBar"><div></div></div><div id="busySub" style="font-size:12.5px;opacity:.8"></div></div>
+<div id="toast"></div>
+
+<!-- Pandoc compiled to WebAssembly (LaTeX <-> Word), runs in the browser -->
+<script type="module">
+var tt=class p{static read_bytes(t,n){let o=new p;return o.buf=t.getUint32(n,!0),o.buf_len=t.getUint32(n+4,!0),o}static read_bytes_array(t,n,o){let c=[];for(let e=0;e<o;e++)c.push(p.read_bytes(t,n+8*e));return c}},et=class p{static read_bytes(t,n){let o=new p;return o.buf=t.getUint32(n,!0),o.buf_len=t.getUint32(n+4,!0),o}static read_bytes_array(t,n,o){let c=[];for(let e=0;e<o;e++)c.push(p.read_bytes(t,n+8*e));return c}},wt=0,Nt=1,lt=2;var Ot=2,C=3,X=4;var v=class{head_length(){return 24}name_length(){return this.dir_name.byteLength}write_head_bytes(t,n){t.setBigUint64(n,this.d_next,!0),t.setBigUint64(n+8,this.d_ino,!0),t.setUint32(n+16,this.dir_name.length,!0),t.setUint8(n+20,this.d_type)}write_name_bytes(t,n,o){t.set(this.dir_name.slice(0,Math.min(this.dir_name.byteLength,o)),n)}constructor(t,n,o,c){let e=new TextEncoder().encode(o);this.d_next=t,this.d_ino=n,this.d_namlen=e.byteLength,this.d_type=c,this.dir_name=e}};var ht=1;var K=class{write_bytes(t,n){t.setUint8(n,this.fs_filetype),t.setUint16(n+2,this.fs_flags,!0),t.setBigUint64(n+8,this.fs_rights_base,!0),t.setBigUint64(n+16,this.fs_rights_inherited,!0)}constructor(t,n){this.fs_rights_base=0n,this.fs_rights_inherited=0n,this.fs_filetype=t,this.fs_flags=n}};var ct=1,Q=2,St=4,ut=8,z=class{write_bytes(t,n){t.setBigUint64(n,this.dev,!0),t.setBigUint64(n+8,this.ino,!0),t.setUint8(n+16,this.filetype),t.setBigUint64(n+24,this.nlink,!0),t.setBigUint64(n+32,this.size,!0),t.setBigUint64(n+38,this.atim,!0),t.setBigUint64(n+46,this.mtim,!0),t.setBigUint64(n+52,this.ctim,!0)}constructor(t,n,o){this.dev=0n,this.nlink=0n,this.atim=0n,this.mtim=0n,this.ctim=0n,this.ino=t,this.filetype=n,this.size=o}},Ct=0;var Lt=1,at=class p{static read_bytes(t,n){return new p(t.getBigUint64(n,!0),t.getUint8(n+8),t.getUint32(n+16,!0),t.getBigUint64(n+24,!0),t.getUint16(n+36,!0))}constructor(t,n,o,c,e){this.userdata=t,this.eventtype=n,this.clockid=o,this.timeout=c,this.flags=e}},_t=class{write_bytes(t,n){t.setBigUint64(n,this.userdata,!0),t.setUint16(n+8,this.error,!0),t.setUint8(n+10,this.eventtype)}constructor(t,n,o){this.userdata=t,this.error=n,this.eventtype=o}};var Ht=0,pt=class{write_bytes(t,n){t.setUint32(n,this.pr_name.byteLength,!0)}constructor(t){this.pr_name=new TextEncoder().encode(t)}},ft=class p{static dir(t){let n=new p;return n.tag=Ht,n.inner=new pt(t),n}write_bytes(t,n){t.setUint32(n,this.tag,!0),this.inner.write_bytes(t,n+4)}};var Yt=class{enable(t){this.log=Mt(t===void 0?!0:t,this.prefix)}get enabled(){return this.isEnabled}constructor(t){this.isEnabled=t,this.prefix="wasi:",this.enable(t)}};function Mt(p,t){return p?console.log.bind(console,"%c%s","color: #265BA0",t):()=>{}}var m=new Yt(!1);var nt=class extends Error{constructor(t){super("exit with exit code "+t),this.code=t}},It=class{start(t){this.inst=t;try{return t.exports._start(),0}catch(n){if(n instanceof nt)return n.code;throw n}}initialize(t){this.inst=t,t.exports._initialize&&t.exports._initialize()}constructor(t,n,o,c={}){this.args=[],this.env=[],this.fds=[],m.enable(c.debug),this.args=t,this.env=n,this.fds=o;let e=this;this.wasiImport={args_sizes_get(r,s){let i=new DataView(e.inst.exports.memory.buffer);i.setUint32(r,e.args.length,!0);let a=0;for(let _ of e.args)a+=_.length+1;return i.setUint32(s,a,!0),m.log(i.getUint32(r,!0),i.getUint32(s,!0)),0},args_get(r,s){let i=new DataView(e.inst.exports.memory.buffer),a=new Uint8Array(e.inst.exports.memory.buffer),_=s;for(let f=0;f<e.args.length;f++){i.setUint32(r,s,!0),r+=4;let l=new TextEncoder().encode(e.args[f]);a.set(l,s),i.setUint8(s+l.length,0),s+=l.length+1}return m.enabled&&m.log(new TextDecoder("utf-8").decode(a.slice(_,s))),0},environ_sizes_get(r,s){let i=new DataView(e.inst.exports.memory.buffer);i.setUint32(r,e.env.length,!0);let a=0;for(let _ of e.env)a+=new TextEncoder().encode(_).length+1;return i.setUint32(s,a,!0),m.log(i.getUint32(r,!0),i.getUint32(s,!0)),0},environ_get(r,s){let i=new DataView(e.inst.exports.memory.buffer),a=new Uint8Array(e.inst.exports.memory.buffer),_=s;for(let f=0;f<e.env.length;f++){i.setUint32(r,s,!0),r+=4;let l=new TextEncoder().encode(e.env[f]);a.set(l,s),i.setUint8(s+l.length,0),s+=l.length+1}return m.enabled&&m.log(new TextDecoder("utf-8").decode(a.slice(_,s))),0},clock_res_get(r,s){let i;switch(r){case 1:{i=5000n;break}case 0:{i=1000000n;break}default:return 52}return new DataView(e.inst.exports.memory.buffer).setBigUint64(s,i,!0),0},clock_time_get(r,s,i){let a=new DataView(e.inst.exports.memory.buffer);if(r===0)a.setBigUint64(i,BigInt(new Date().getTime())*1000000n,!0);else if(r==1){let _;try{_=BigInt(Math.round(performance.now()*1e6))}catch{_=0n}a.setBigUint64(i,_,!0)}else a.setBigUint64(i,0n,!0);return 0},fd_advise(r,s,i,a){return e.fds[r]!=null?0:8},fd_allocate(r,s,i){return e.fds[r]!=null?e.fds[r].fd_allocate(s,i):8},fd_close(r){if(e.fds[r]!=null){let s=e.fds[r].fd_close();return e.fds[r]=void 0,s}else return 8},fd_datasync(r){return e.fds[r]!=null?e.fds[r].fd_sync():8},fd_fdstat_get(r,s){if(e.fds[r]!=null){let{ret:i,fdstat:a}=e.fds[r].fd_fdstat_get();return a?.write_bytes(new DataView(e.inst.exports.memory.buffer),s),i}else return 8},fd_fdstat_set_flags(r,s){return e.fds[r]!=null?e.fds[r].fd_fdstat_set_flags(s):8},fd_fdstat_set_rights(r,s,i){return e.fds[r]!=null?e.fds[r].fd_fdstat_set_rights(s,i):8},fd_filestat_get(r,s){if(e.fds[r]!=null){let{ret:i,filestat:a}=e.fds[r].fd_filestat_get();return a?.write_bytes(new DataView(e.inst.exports.memory.buffer),s),i}else return 8},fd_filestat_set_size(r,s){return e.fds[r]!=null?e.fds[r].fd_filestat_set_size(s):8},fd_filestat_set_times(r,s,i,a){return e.fds[r]!=null?e.fds[r].fd_filestat_set_times(s,i,a):8},fd_pread(r,s,i,a,_){let f=new DataView(e.inst.exports.memory.buffer),l=new Uint8Array(e.inst.exports.memory.buffer);if(e.fds[r]!=null){let R=tt.read_bytes_array(f,s,i),E=0;for(let u of R){let{ret:O,data:x}=e.fds[r].fd_pread(u.buf_len,a);if(O!=0)return f.setUint32(_,E,!0),O;if(l.set(x,u.buf),E+=x.length,a+=BigInt(x.length),x.length!=u.buf_len)break}return f.setUint32(_,E,!0),0}else return 8},fd_prestat_get(r,s){let i=new DataView(e.inst.exports.memory.buffer);if(e.fds[r]!=null){let{ret:a,prestat:_}=e.fds[r].fd_prestat_get();return _?.write_bytes(i,s),a}else return 8},fd_prestat_dir_name(r,s,i){if(e.fds[r]!=null){let{ret:a,prestat:_}=e.fds[r].fd_prestat_get();if(_==null)return a;let f=_.inner.pr_name;return new Uint8Array(e.inst.exports.memory.buffer).set(f.slice(0,i),s),f.byteLength>i?37:0}else return 8},fd_pwrite(r,s,i,a,_){let f=new DataView(e.inst.exports.memory.buffer),l=new Uint8Array(e.inst.exports.memory.buffer);if(e.fds[r]!=null){let R=et.read_bytes_array(f,s,i),E=0;for(let u of R){let O=l.slice(u.buf,u.buf+u.buf_len),{ret:x,nwritten:H}=e.fds[r].fd_pwrite(O,a);if(x!=0)return f.setUint32(_,E,!0),x;if(E+=H,a+=BigInt(H),H!=O.byteLength)break}return f.setUint32(_,E,!0),0}else return 8},fd_read(r,s,i,a){let _=new DataView(e.inst.exports.memory.buffer),f=new Uint8Array(e.inst.exports.memory.buffer);if(e.fds[r]!=null){let l=tt.read_bytes_array(_,s,i),R=0;for(let E of l){let{ret:u,data:O}=e.fds[r].fd_read(E.buf_len);if(u!=0)return _.setUint32(a,R,!0),u;if(f.set(O,E.buf),R+=O.length,O.length!=E.buf_len)break}return _.setUint32(a,R,!0),0}else return 8},fd_readdir(r,s,i,a,_){let f=new DataView(e.inst.exports.memory.buffer),l=new Uint8Array(e.inst.exports.memory.buffer);if(e.fds[r]!=null){let R=0;for(;;){let{ret:E,dirent:u}=e.fds[r].fd_readdir_single(a);if(E!=0)return f.setUint32(_,R,!0),E;if(u==null)break;if(i-R<u.head_length()){R=i;break}let O=new ArrayBuffer(u.head_length());if(u.write_head_bytes(new DataView(O),0),l.set(new Uint8Array(O).slice(0,Math.min(O.byteLength,i-R)),s),s+=u.head_length(),R+=u.head_length(),i-R<u.name_length()){R=i;break}u.write_name_bytes(l,s,i-R),s+=u.name_length(),R+=u.name_length(),a=u.d_next}return f.setUint32(_,R,!0),0}else return 8},fd_renumber(r,s){if(e.fds[r]!=null&&e.fds[s]!=null){let i=e.fds[s].fd_close();return i!=0?i:(e.fds[s]=e.fds[r],e.fds[r]=void 0,0)}else return 8},fd_seek(r,s,i,a){let _=new DataView(e.inst.exports.memory.buffer);if(e.fds[r]!=null){let{ret:f,offset:l}=e.fds[r].fd_seek(s,i);return _.setBigInt64(a,l,!0),f}else return 8},fd_sync(r){return e.fds[r]!=null?e.fds[r].fd_sync():8},fd_tell(r,s){let i=new DataView(e.inst.exports.memory.buffer);if(e.fds[r]!=null){let{ret:a,offset:_}=e.fds[r].fd_tell();return i.setBigUint64(s,_,!0),a}else return 8},fd_write(r,s,i,a){let _=new DataView(e.inst.exports.memory.buffer),f=new Uint8Array(e.inst.exports.memory.buffer);if(e.fds[r]!=null){let l=et.read_bytes_array(_,s,i),R=0;for(let E of l){let u=f.slice(E.buf,E.buf+E.buf_len),{ret:O,nwritten:x}=e.fds[r].fd_write(u);if(O!=0)return _.setUint32(a,R,!0),O;if(R+=x,x!=u.byteLength)break}return _.setUint32(a,R,!0),0}else return 8},path_create_directory(r,s,i){let a=new Uint8Array(e.inst.exports.memory.buffer);if(e.fds[r]!=null){let _=new TextDecoder("utf-8").decode(a.slice(s,s+i));return e.fds[r].path_create_directory(_)}else return 8},path_filestat_get(r,s,i,a,_){let f=new DataView(e.inst.exports.memory.buffer),l=new Uint8Array(e.inst.exports.memory.buffer);if(e.fds[r]!=null){let R=new TextDecoder("utf-8").decode(l.slice(i,i+a)),{ret:E,filestat:u}=e.fds[r].path_filestat_get(s,R);return u?.write_bytes(f,_),E}else return 8},path_filestat_set_times(r,s,i,a,_,f,l){let R=new Uint8Array(e.inst.exports.memory.buffer);if(e.fds[r]!=null){let E=new TextDecoder("utf-8").decode(R.slice(i,i+a));return e.fds[r].path_filestat_set_times(s,E,_,f,l)}else return 8},path_link(r,s,i,a,_,f,l){let R=new Uint8Array(e.inst.exports.memory.buffer);if(e.fds[r]!=null&&e.fds[_]!=null){let E=new TextDecoder("utf-8").decode(R.slice(i,i+a)),u=new TextDecoder("utf-8").decode(R.slice(f,f+l)),{ret:O,inode_obj:x}=e.fds[r].path_lookup(E,s);return x==null?O:e.fds[_].path_link(u,x,!1)}else return 8},path_open(r,s,i,a,_,f,l,R,E){let u=new DataView(e.inst.exports.memory.buffer),O=new Uint8Array(e.inst.exports.memory.buffer);if(e.fds[r]!=null){let x=new TextDecoder("utf-8").decode(O.slice(i,i+a));m.log(x);let{ret:H,fd_obj:w}=e.fds[r].path_open(s,x,_,f,l,R);if(H!=0)return H;e.fds.push(w);let S=e.fds.length-1;return u.setUint32(E,S,!0),0}else return 8},path_readlink(r,s,i,a,_,f){let l=new DataView(e.inst.exports.memory.buffer),R=new Uint8Array(e.inst.exports.memory.buffer);if(e.fds[r]!=null){let E=new TextDecoder("utf-8").decode(R.slice(s,s+i));m.log(E);let{ret:u,data:O}=e.fds[r].path_readlink(E);if(O!=null){let x=new TextEncoder().encode(O);if(x.length>_)return l.setUint32(f,0,!0),8;R.set(x,a),l.setUint32(f,x.length,!0)}return u}else return 8},path_remove_directory(r,s,i){let a=new Uint8Array(e.inst.exports.memory.buffer);if(e.fds[r]!=null){let _=new TextDecoder("utf-8").decode(a.slice(s,s+i));return e.fds[r].path_remove_directory(_)}else return 8},path_rename(r,s,i,a,_,f){let l=new Uint8Array(e.inst.exports.memory.buffer);if(e.fds[r]!=null&&e.fds[a]!=null){let R=new TextDecoder("utf-8").decode(l.slice(s,s+i)),E=new TextDecoder("utf-8").decode(l.slice(_,_+f)),{ret:u,inode_obj:O}=e.fds[r].path_unlink(R);if(O==null)return u;if(u=e.fds[a].path_link(E,O,!0),u!=0&&e.fds[r].path_link(R,O,!0)!=0)throw"path_link should always return success when relinking an inode back to the original place";return u}else return 8},path_symlink(r,s,i,a,_){let f=new Uint8Array(e.inst.exports.memory.buffer);if(e.fds[i]!=null){let l=new TextDecoder("utf-8").decode(f.slice(r,r+s)),R=new TextDecoder("utf-8").decode(f.slice(a,a+_));return 58}else return 8},path_unlink_file(r,s,i){let a=new Uint8Array(e.inst.exports.memory.buffer);if(e.fds[r]!=null){let _=new TextDecoder("utf-8").decode(a.slice(s,s+i));return e.fds[r].path_unlink_file(_)}else return 8},poll_oneoff(r,s,i){if(i===0)return 28;if(i>1)return m.log("poll_oneoff: only a single subscription is supported"),58;let a=new DataView(e.inst.exports.memory.buffer),_=at.read_bytes(a,r),f=_.eventtype,l=_.clockid,R=_.timeout;if(f!==Ct)return m.log("poll_oneoff: only clock subscriptions are supported"),58;let E;if(l===1)E=()=>BigInt(Math.round(performance.now()*1e6));else if(l===0)E=()=>BigInt(new Date().getTime())*1000000n;else return 28;let u=_.flags&Lt?R:E()+R;for(;u>E(););return new _t(_.userdata,0,f).write_bytes(a,s),0},proc_exit(r){throw new nt(r)},proc_raise(r){throw"raised signal "+r},sched_yield(){},random_get(r,s){let i=new Uint8Array(e.inst.exports.memory.buffer).subarray(r,r+s);if("crypto"in globalThis&&(typeof SharedArrayBuffer>"u"||!(e.inst.exports.memory.buffer instanceof SharedArrayBuffer)))for(let a=0;a<s;a+=65536)crypto.getRandomValues(i.subarray(a,a+65536));else for(let a=0;a<s;a++)i[a]=Math.random()*256|0},sock_recv(r,s,i){throw"sockets not supported"},sock_send(r,s,i){throw"sockets not supported"},sock_shutdown(r,s){throw"sockets not supported"},sock_accept(r,s){throw"sockets not supported"}}}};var k=class{fd_allocate(t,n){return 58}fd_close(){return 0}fd_fdstat_get(){return{ret:58,fdstat:null}}fd_fdstat_set_flags(t){return 58}fd_fdstat_set_rights(t,n){return 58}fd_filestat_get(){return{ret:58,filestat:null}}fd_filestat_set_size(t){return 58}fd_filestat_set_times(t,n,o){return 58}fd_pread(t,n){return{ret:58,data:new Uint8Array}}fd_prestat_get(){return{ret:58,prestat:null}}fd_pwrite(t,n){return{ret:58,nwritten:0}}fd_read(t){return{ret:58,data:new Uint8Array}}fd_readdir_single(t){return{ret:58,dirent:null}}fd_seek(t,n){return{ret:58,offset:0n}}fd_sync(){return 0}fd_tell(){return{ret:58,offset:0n}}fd_write(t){return{ret:58,nwritten:0}}path_create_directory(t){return 58}path_filestat_get(t,n){return{ret:58,filestat:null}}path_filestat_set_times(t,n,o,c,e){return 58}path_link(t,n,o){return 58}path_unlink(t){return{ret:58,inode_obj:null}}path_lookup(t,n){return{ret:58,inode_obj:null}}path_open(t,n,o,c,e,r){return{ret:54,fd_obj:null}}path_readlink(t){return{ret:58,data:null}}path_remove_directory(t){return 58}path_rename(t,n,o){return 58}path_unlink_file(t){return 58}},P=class p{static issue_ino(){return p.next_ino++}static root_ino(){return 0n}constructor(){this.ino=p.issue_ino()}};P.next_ino=1n;var J=class extends k{fd_allocate(t,n){if(!(this.file.size>t+n)){let o=new Uint8Array(Number(t+n));o.set(this.file.data,0),this.file.data=o}return 0}fd_fdstat_get(){return{ret:0,fdstat:new K(X,0)}}fd_filestat_set_size(t){if(this.file.size>t)this.file.data=new Uint8Array(this.file.data.buffer.slice(0,Number(t)));else{let n=new Uint8Array(Number(t));n.set(this.file.data,0),this.file.data=n}return 0}fd_read(t){let n=this.file.data.slice(Number(this.file_pos),Number(this.file_pos+BigInt(t)));return this.file_pos+=BigInt(n.length),{ret:0,data:n}}fd_pread(t,n){return{ret:0,data:this.file.data.slice(Number(n),Number(n+BigInt(t)))}}fd_seek(t,n){let o;switch(n){case wt:o=t;break;case Nt:o=this.file_pos+t;break;case lt:o=BigInt(this.file.data.byteLength)+t;break;default:return{ret:28,offset:0n}}return o<0?{ret:28,offset:0n}:(this.file_pos=o,{ret:0,offset:this.file_pos})}fd_tell(){return{ret:0,offset:this.file_pos}}fd_write(t){if(this.file.readonly)return{ret:8,nwritten:0};if(this.file_pos+BigInt(t.byteLength)>this.file.size){let n=this.file.data;this.file.data=new Uint8Array(Number(this.file_pos+BigInt(t.byteLength))),this.file.data.set(n)}return this.file.data.set(t,Number(this.file_pos)),this.file_pos+=BigInt(t.byteLength),{ret:0,nwritten:t.byteLength}}fd_pwrite(t,n){if(this.file.readonly)return{ret:8,nwritten:0};if(n+BigInt(t.byteLength)>this.file.size){let o=this.file.data;this.file.data=new Uint8Array(Number(n+BigInt(t.byteLength))),this.file.data.set(o)}return this.file.data.set(t,Number(n)),{ret:0,nwritten:t.byteLength}}fd_filestat_get(){return{ret:0,filestat:this.file.stat()}}constructor(t){super(),this.file_pos=0n,this.file=t}},st=class extends k{fd_seek(t,n){return{ret:8,offset:0n}}fd_tell(){return{ret:8,offset:0n}}fd_allocate(t,n){return 8}fd_fdstat_get(){return{ret:0,fdstat:new K(C,0)}}fd_readdir_single(t){if(m.enabled&&(m.log("readdir_single",t),m.log(t,this.dir.contents.keys())),t==0n)return{ret:0,dirent:new v(1n,this.dir.ino,".",C)};if(t==1n)return{ret:0,dirent:new v(2n,this.dir.parent_ino(),"..",C)};if(t>=BigInt(this.dir.contents.size)+2n)return{ret:0,dirent:null};let[n,o]=Array.from(this.dir.contents.entries())[Number(t-2n)];return{ret:0,dirent:new v(t+1n,o.ino,n,o.stat().filetype)}}path_filestat_get(t,n){let{ret:o,path:c}=W.from(n);if(c==null)return{ret:o,filestat:null};let{ret:e,entry:r}=this.dir.get_entry_for_path(c);return r==null?{ret:e,filestat:null}:{ret:0,filestat:r.stat()}}path_lookup(t,n){let{ret:o,path:c}=W.from(t);if(c==null)return{ret:o,inode_obj:null};let{ret:e,entry:r}=this.dir.get_entry_for_path(c);return r==null?{ret:e,inode_obj:null}:{ret:0,inode_obj:r}}path_open(t,n,o,c,e,r){let{ret:s,path:i}=W.from(n);if(i==null)return{ret:s,fd_obj:null};let{ret:a,entry:_}=this.dir.get_entry_for_path(i);if(_==null){if(a!=44)return{ret:a,fd_obj:null};if((o&ct)==ct){let{ret:f,entry:l}=this.dir.create_entry_for_path(n,(o&Q)==Q);if(l==null)return{ret:f,fd_obj:null};_=l}else return{ret:44,fd_obj:null}}else if((o&St)==St)return{ret:20,fd_obj:null};return(o&Q)==Q&&_.stat().filetype!==C?{ret:54,fd_obj:null}:_.path_open(o,c,r)}path_create_directory(t){return this.path_open(0,t,ct|Q,0n,0n,0).ret}path_link(t,n,o){let{ret:c,path:e}=W.from(t);if(e==null)return c;if(e.is_dir)return 44;let{ret:r,parent_entry:s,filename:i,entry:a}=this.dir.get_parent_dir_and_entry_for_path(e,!0);if(s==null||i==null)return r;if(a!=null){let _=n.stat().filetype==C,f=a.stat().filetype==C;if(_&&f)if(o&&a instanceof B){if(a.contents.size!=0)return 55}else return 20;else{if(_&&!f)return 54;if(!_&&f)return 31;if(!(n.stat().filetype==X&&a.stat().filetype==X))return 20}}return!o&&n.stat().filetype==C?63:(s.contents.set(i,n),0)}path_unlink(t){let{ret:n,path:o}=W.from(t);if(o==null)return{ret:n,inode_obj:null};let{ret:c,parent_entry:e,filename:r,entry:s}=this.dir.get_parent_dir_and_entry_for_path(o,!0);return e==null||r==null?{ret:c,inode_obj:null}:s==null?{ret:44,inode_obj:null}:(e.contents.delete(r),{ret:0,inode_obj:s})}path_unlink_file(t){let{ret:n,path:o}=W.from(t);if(o==null)return n;let{ret:c,parent_entry:e,filename:r,entry:s}=this.dir.get_parent_dir_and_entry_for_path(o,!1);return e==null||r==null||s==null?c:s.stat().filetype===C?31:(e.contents.delete(r),0)}path_remove_directory(t){let{ret:n,path:o}=W.from(t);if(o==null)return n;let{ret:c,parent_entry:e,filename:r,entry:s}=this.dir.get_parent_dir_and_entry_for_path(o,!1);return e==null||r==null||s==null?c:!(s instanceof B)||s.stat().filetype!==C?54:s.contents.size!==0?55:e.contents.delete(r)?0:44}fd_filestat_get(){return{ret:0,filestat:this.dir.stat()}}fd_filestat_set_size(t){return 8}fd_read(t){return{ret:8,data:new Uint8Array}}fd_pread(t,n){return{ret:8,data:new Uint8Array}}fd_write(t){return{ret:8,nwritten:0}}fd_pwrite(t,n){return{ret:8,nwritten:0}}constructor(t){super(),this.dir=t}},it=class extends st{fd_prestat_get(){return{ret:0,prestat:ft.dir(this.prestat_name)}}constructor(t,n){super(new B(n)),this.prestat_name=t}},L=class extends P{path_open(t,n,o){if(this.readonly&&(n&BigInt(64))==BigInt(64))return{ret:63,fd_obj:null};if((t&ut)==ut){if(this.readonly)return{ret:63,fd_obj:null};this.data=new Uint8Array([])}let c=new J(this);return o&ht&&c.fd_seek(0n,lt),{ret:0,fd_obj:c}}get size(){return BigInt(this.data.byteLength)}stat(){return new z(this.ino,X,this.size)}constructor(t,n){super(),this.data=new Uint8Array(t),this.readonly=!!n?.readonly}},W=class Gt{static from(t){let n=new Gt;if(n.is_dir=t.endsWith("/"),t.startsWith("/"))return{ret:76,path:null};if(t.includes("\0"))return{ret:28,path:null};for(let o of t.split("/"))if(!(o===""||o===".")){if(o===".."){if(n.parts.pop()==null)return{ret:76,path:null};continue}n.parts.push(o)}return{ret:0,path:n}}to_path_string(){let t=this.parts.join("/");return this.is_dir&&(t+="/"),t}constructor(){this.parts=[],this.is_dir=!1}},B=class p extends P{parent_ino(){return this.parent==null?P.root_ino():this.parent.ino}path_open(t,n,o){return{ret:0,fd_obj:new st(this)}}stat(){return new z(this.ino,C,0n)}get_entry_for_path(t){let n=this;for(let o of t.parts){if(!(n instanceof p))return{ret:54,entry:null};let c=n.contents.get(o);if(c!==void 0)n=c;else return m.log(o),{ret:44,entry:null}}return t.is_dir&&n.stat().filetype!=C?{ret:54,entry:null}:{ret:0,entry:n}}get_parent_dir_and_entry_for_path(t,n){let o=t.parts.pop();if(o===void 0)return{ret:28,parent_entry:null,filename:null,entry:null};let{ret:c,entry:e}=this.get_entry_for_path(t);if(e==null)return{ret:c,parent_entry:null,filename:null,entry:null};if(!(e instanceof p))return{ret:54,parent_entry:null,filename:null,entry:null};let r=e.contents.get(o);return r===void 0?n?{ret:0,parent_entry:e,filename:o,entry:null}:{ret:44,parent_entry:null,filename:null,entry:null}:t.is_dir&&r.stat().filetype!=C?{ret:54,parent_entry:null,filename:null,entry:null}:{ret:0,parent_entry:e,filename:o,entry:r}}create_entry_for_path(t,n){let{ret:o,path:c}=W.from(t);if(c==null)return{ret:o,entry:null};let{ret:e,parent_entry:r,filename:s,entry:i}=this.get_parent_dir_and_entry_for_path(c,!0);if(r==null||s==null)return{ret:e,entry:null};if(i!=null)return{ret:20,entry:null};m.log("create",c);let a;return n?a=new p(new Map):a=new L(new ArrayBuffer(0)),r.contents.set(s,a),i=a,{ret:0,entry:i}}constructor(t){super(),this.parent=null,t instanceof Array?this.contents=new Map(t):this.contents=t;for(let n of this.contents.values())n instanceof p&&(n.parent=this)}},Z=class p extends k{fd_filestat_get(){return{ret:0,filestat:new z(this.ino,Ot,BigInt(0))}}fd_fdstat_get(){let t=new K(Ot,0);return t.fs_rights_base=BigInt(64),{ret:0,fdstat:t}}fd_write(t){return this.write(t),{ret:0,nwritten:t.byteLength}}static lineBuffered(t){let n=new TextDecoder("utf-8",{fatal:!1}),o="";return new p(c=>{o+=n.decode(c,{stream:!0});let e=o.split(`
+`);for(let[r,s]of e.entries())r<e.length-1?t(s):o=s})}constructor(t){super(),this.ino=P.issue_ino(),this.write=t}};function ce(p){let t=["pandoc.wasm","+RTS","-H64m","-RTS"],n=[],o=new Map,c=[new J(new L(new Uint8Array,{readonly:!0})),Z.lineBuffered(s=>console.log(`[WASI stdout] ${s}`)),Z.lineBuffered(s=>console.warn(`[WASI stderr] ${s}`)),new it("/",o)],e={debug:!1},r=new It(t,n,c,e);return WebAssembly.instantiate(p,{wasi_snapshot_preview1:r.wasiImport}).then(({instance:s})=>{r.initialize(s),s.exports.__wasm_call_ctors();function i(){return new DataView(s.exports.memory.buffer)}let a=s.exports.malloc(4);i().setUint32(a,t.length,!0);let _=s.exports.malloc(4*(t.length+1));for(let w=0;w<t.length;++w){let S=s.exports.malloc(t[w].length+1);new TextEncoder().encodeInto(t[w],new Uint8Array(s.exports.memory.buffer,S,t[w].length)),i().setUint8(S+t[w].length,0),i().setUint32(_+4*w,S,!0)}i().setUint32(_+4*t.length,0,!0);let f=s.exports.malloc(4);i().setUint32(f,_,!0),s.exports.hs_init_with_rtsopts(a,f);async function l(w,S,I){let b;if(typeof S=="string")b=new TextEncoder().encode(S);else{let g=await S.arrayBuffer();b=new Uint8Array(g)}let A=new L(b,{readonly:I}),U=w.split("/").filter(g=>g&&g!=="."),y=o;for(let g=0;g<U.length-1;g++){let F=y.get(U[g]);F instanceof B||(F=new B(new Map),y.set(U[g],F)),y=F.contents}y.set(U[U.length-1],A)}function R(w){let S=JSON.stringify(w),I=new TextEncoder().encode(S),b=s.exports.malloc(I.length);new TextEncoder().encodeInto(S,new Uint8Array(s.exports.memory.buffer,b,I.length)),o.clear();let A=new L(new Uint8Array,{readonly:!1}),U=new L(new Uint8Array,{readonly:!1});o.set("stdout",A),o.set("stderr",U),s.exports.query(b,I.length);let y=new TextDecoder("utf-8",{fatal:!0}).decode(U.data);y&&console.log(y);let g=new TextDecoder("utf-8",{fatal:!0}).decode(A.data);return JSON.parse(g)}async function E(w,S,I){let b=JSON.stringify(w),A=new TextEncoder().encode(b),U=s.exports.malloc(A.length);new TextEncoder().encodeInto(b,new Uint8Array(s.exports.memory.buffer,U,A.length)),I={...I},o.clear();let y=new L(new Uint8Array,{readonly:!0}),g=new L(new Uint8Array,{readonly:!1}),F=new L(new Uint8Array,{readonly:!1}),$=new L(new Uint8Array,{readonly:!1});o.set("stdin",y),o.set("stdout",g),o.set("stderr",F),o.set("warnings",$);let Y=new Set(["stdin","stdout","stderr","warnings"]);for(let D in I)await l(D,I[D],!0),Y.add(D);let T=w["output-file"]||null,M=w["extract-media"]||null;if(T&&(await l(T,new Blob,!1),Y.add(T)),M&&M.endsWith(".zip")&&(await l(M,new Blob,!1),Y.add(M)),S&&(y.data=new TextEncoder().encode(S)),s.exports.convert(U,A.length),w["output-file"]){let D=o.get(w["output-file"]);D&&D.data&&D.data.length>0&&(I[w["output-file"]]=new Blob([D.data]))}if(w["extract-media"]){let D=o.get(w["extract-media"]);D&&D.data&&D.data.length>0&&(I[w["extract-media"]]=new Blob([D.data],{type:"application/zip"}))}let At={},yt=(D,Dt)=>{for(let[bt,q]of D.entries()){let ot=Dt?`${Dt}/${bt}`:bt;if(q instanceof B)yt(q.contents,ot);else if(!Y.has(ot)&&q.data&&q.data.length>0){let Ut=new Blob([q.data]);I[ot]=Ut,At[ot]=Ut}}};yt(o,"");let gt=new TextDecoder("utf-8",{fatal:!0}).decode($.data),mt=[];if(gt)try{mt=JSON.parse(gt)}catch(D){console.warn("Failed to parse warnings:",D)}return{stdout:new TextDecoder("utf-8",{fatal:!0}).decode(g.data),stderr:new TextDecoder("utf-8",{fatal:!0}).decode(F.data),warnings:mt,files:I,mediaFiles:At}}async function u(w){let S;if(typeof w=="string")S=new TextEncoder().encode(w);else if(w instanceof Blob){let I=await w.arrayBuffer();S=new Uint8Array(I)}else throw new Error("Unsupported type: inData must be a string or a Blob");return S}let O=new TextDecoder("utf-8",{fatal:!0});function x(w){let S;try{S=O.decode(w)}catch{S=new Blob([w])}return S}async function H(w,S,I=[]){let b=w.trim().split(/\s+/),A={},U={},y=0;for(;y<b.length;){let T=b[y];T==="-f"||T==="--from"?A.from=b[++y]:T==="-t"||T==="--to"?A.to=b[++y]:T==="-o"||T==="--output"?A["output-file"]=b[++y]:T==="-s"||T==="--standalone"?A.standalone=!0:T==="--extract-media"?A["extract-media"]=b[++y]:(T==="--toc"||T==="--table-of-contents")&&(A["table-of-contents"]=!0),y++}for(let T of I)if(typeof T.contents=="string")U[T.filename]=T.contents;else{let M=await u(T.contents);U[T.filename]=new Blob([M])}let g=null;if(S)if(typeof S=="string")g=S;else{let T=await u(S);g=new TextDecoder("utf-8").decode(T)}let F=await E(A,g,U),$=new Map;for(let[T,M]of Object.entries(F.mediaFiles))$.set(T,x(new Uint8Array(await M.arrayBuffer())));let Y;return A["output-file"]&&F.files[A["output-file"]]?Y=x(new Uint8Array(await F.files[A["output-file"]].arrayBuffer())):Y=F.stdout,{out:Y,mediaFiles:$}}return{convert:E,query:R,pandoc:H}})}window.createPandocInstance=ce;
+</script>
+
+<script>
+"use strict";
+// ============================================================
+//  UTILITIES
+// ============================================================
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let toastT;
+function toast(m,ms=2800){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),ms);}
+function busy(on,msg='',sub=''){$('busy').classList.toggle('on',on);$('busyMsg').textContent=msg;$('busySub').textContent=sub;setBusyPct(null);}
+function setBusyPct(p){const b=$('busyBar');if(p==null)b.style.display='none';else{b.style.display='block';b.firstChild.style.width=Math.round(p*100)+'%';}}
+function openM(id){closeMenus();$(id).classList.add('on');}
+function closeM(id){$(id).classList.remove('on');}
+document.querySelectorAll('.mwrap').forEach(m=>m.addEventListener('mousedown',e=>{if(e.target===m){if(m.id==='mAsk')askDone(null);else m.classList.remove('on');}}));
+function info(t,h){$('infoTitle').textContent=t;$('infoBody').innerHTML=h;openM('mInfo');}
+let askCb=null;
+function ask(title,label,def=''){return new Promise(res=>{askCb=res;$('askTitle').textContent=title;$('askLabel').textContent=label;$('askIn').value=def;openM('mAsk');setTimeout(()=>{const i=$('askIn');i.focus();const dot=def.lastIndexOf('.'),sl=def.lastIndexOf('/')+1;i.setSelectionRange(sl,dot>sl?dot:def.length);},30);});}
+function askDone(v){closeM('mAsk');const cb=askCb;askCb=null;if(cb)cb(v==null?null:String(v).trim()||null);}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function b64ToBlob(b64,type='application/octet-stream'){const bin=atob(b64);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u],{type});}
+function blobToB64(blob){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=rej;r.readAsDataURL(blob);});}
+function saveAs(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);}
+function pickFile(accept,cb,multiple=false){closeMenus();const i=document.createElement('input');i.type='file';i.accept=accept;i.multiple=multiple;i.onchange=()=>{if(i.files.length)cb(multiple?[...i.files]:i.files[0]);};i.click();}
+function safeName(s){return(s||'project').replace(/[\\/:*?"<>|]+/g,'_').trim()||'project';}
+function ago(t){const s=(Date.now()-t)/1000;if(s<45)return'a few seconds ago';const m=s/60;if(m<1.5)return'a minute ago';if(m<45)return Math.round(m)+' minutes ago';const h=m/60;if(h<1.5)return'an hour ago';if(h<22)return Math.round(h)+' hours ago';const d=h/24;if(d<1.5)return'a day ago';if(d<26)return Math.round(d)+' days ago';const mo=d/30;if(mo<1.5)return'a month ago';if(mo<11)return Math.round(mo)+' months ago';const y=d/365;return y<1.5?'a year ago':Math.round(y)+' years ago';}
+const TEXT_EXT=/\.(tex|bib|cls|sty|bst|bbx|cbx|lbx|dbx|def|cfg|clo|fd|ist|txt|md|csv|tsv|dat|tikz|pgf|ltx|dtx|ins|bbl|json|xml|yaml|yml|lua|py|m|r|gnuplot|gp|csl)$/i;
+const IMG_EXT=/\.(png|jpe?g|gif|webp|bmp|svg)$/i;
+const isText=p=>TEXT_EXT.test(p);
+function mimeOf(p){const e=p.split('.').pop().toLowerCase();return({png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',webp:'image/webp',svg:'image/svg+xml',pdf:'application/pdf',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})[e]||'application/octet-stream';}
+
+// ---------- dropdown menus ----------
+let openMenuEl=null,openMenuBtn=null;
+function openMenu(id,btn,x,y){
+  const m=$(id);
+  if(openMenuEl===m){closeMenus();return;}
+  closeMenus();
+  if(id==='mLayout'||id==='mView'){['both','editor','pdf'].forEach(l=>{const a=$('lk-'+l),b=$('ck-'+l);const on=document.body.classList.contains('l-'+l);if(a)a.textContent=on?'✓':'';if(b)b.textContent=on?'✓':'';});}
+  if(id==='mRecomp'){['on','off'].forEach(v=>$('ac-'+v).textContent=settings.auto===v?'✓':'');['pdflatex','xelatex','lualatex'].forEach(v=>$('cc-'+v).textContent=settings.compiler===v?'✓':'');}
+  m.classList.add('on');openMenuEl=m;openMenuBtn=btn||null;if(btn)btn.classList.add('open');
+  const r=btn?btn.getBoundingClientRect():{left:x,bottom:y,right:x};
+  const mw=m.offsetWidth,mh=m.offsetHeight;
+  let left=r.left,top=r.bottom+4;
+  if(left+mw>innerWidth-6)left=Math.max(6,(btn?r.right:x)-mw);
+  if(top+mh>innerHeight-6)top=Math.max(6,innerHeight-mh-6);
+  m.style.left=left+'px';m.style.top=top+'px';
+}
+function closeMenus(){if(openMenuEl)openMenuEl.classList.remove('on');if(openMenuBtn)openMenuBtn.classList.remove('open');openMenuEl=openMenuBtn=null;}
+document.addEventListener('mousedown',e=>{if(openMenuEl&&!openMenuEl.contains(e.target)&&!(openMenuBtn&&openMenuBtn.contains(e.target)))closeMenus();});
+document.addEventListener('click',e=>{if(openMenuEl&&e.target.closest('.menu .mi'))setTimeout(closeMenus,0);});
+
+// ============================================================
+//  STORAGE
+// ============================================================
+const DB={db:null,
+  open(){return new Promise((res,rej)=>{if(this.db)return res(this.db);let req;try{req=indexedDB.open('scholeditor',1);}catch(e){return rej(e);}
+    req.onupgradeneeded=()=>{req.result.createObjectStore('projects',{keyPath:'id'});};req.onsuccess=()=>{this.db=req.result;res(this.db);};req.onerror=()=>rej(req.error);});},
+  async tx(mode,fn){const db=await this.open();return new Promise((res,rej)=>{const t=db.transaction('projects',mode);const r=fn(t.objectStore('projects'));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error);});},
+  put(p){return this.tx('readwrite',s=>s.put(p));},get(id){return this.tx('readonly',s=>s.get(id));},all(){return this.tx('readonly',s=>s.getAll());},del(id){return this.tx('readwrite',s=>s.delete(id));}};
+let memProjects=null; // fallback when IndexedDB is unavailable
+const store={async put(p){if(memProjects){memProjects[p.id]=p;return;}return DB.put(p);},async get(id){return memProjects?memProjects[id]:DB.get(id);},async all(){return memProjects?Object.values(memProjects):DB.all();},async del(id){if(memProjects){delete memProjects[id];return;}return DB.del(id);}};
+const LS={get(k,d){try{const v=localStorage.getItem('se_'+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem('se_'+k,JSON.stringify(v));}catch(e){}}};
+
+// ============================================================
+//  STATE
+// ============================================================
+let project=null,current=null,selected=null,tabs=[];
+const docs={};
+let openFolders=new Set(LS.get('openFolders',[]));
+let lastLog='',lastEntries=[];
+const settings=Object.assign({compiler:'pdflatex',server:'auto',auto:'off',theme:'sedark',font:'14',spell:'off',hints:'on',brackets:'on'},LS.get('settings',{}));
+if(settings.theme!=='sedark'&&settings.theme!=='selight')settings.theme='sedark';
+
+// ============================================================
+//  DASHBOARD
+// ============================================================
+let dashView=LS.get('dashView','all'),dashSort=LS.get('dashSort',{k:'updated',d:-1}),checked=new Set(),allProjects=[];
+const TAG_COLORS=['#2ebd59','#4d8fe8','#e0524a','#d99a1e','#a77be0','#22b8c7','#e86fb0','#9aa5b1'];
+function tags(){return LS.get('tags',[{name:'research',color:'#2ebd59'}]);}
+function setTags(t){LS.set('tags',t);}
+async function goDash(){
+  closeMenus();
+  if(project&&current&&project.files[current]?.type==='text')project.files[current].content=cm.getValue();
+  if(project)await saveProject();
+  location.hash='';showDash();
+}
+async function showDash(){
+  $('ide').hidden=true;$('dash').hidden=false;document.title='Your projects – ScholEditor';
+  allProjects=await store.all();renderDash();
+}
+function inView(p,v){
+  if(v==='trash')return!!p.trashed;
+  if(p.trashed)return false;
+  if(v==='archived')return!!p.archived;
+  if(p.archived)return false;
+  if(v==='all'||v==='mine')return true;
+  if(v==='untagged')return!(p.tags&&p.tags.length);
+  if(v.startsWith('tag:'))return(p.tags||[]).includes(v.slice(4));
+  return true;
+}
+function renderDash(){
+  document.querySelectorAll('.dn[data-view]').forEach(b=>b.classList.toggle('on',b.dataset.view===dashView));
+  const tl=tags();
+  $('tagList').innerHTML=tl.map((t,i)=>`<button class="dn ${dashView==='tag:'+t.name?'on':''}" data-tv="${esc(t.name)}"><span class="tagdot" style="background:${t.color}"></span>${esc(t.name)} (${allProjects.filter(p=>inView(p,'tag:'+t.name)).length})<span class="cnt" title="Delete tag" data-deltag="${i}">✕</span></button>`).join('');
+  $('c-all').textContent=allProjects.filter(p=>inView(p,'all')).length;
+  $('c-archived').textContent=allProjects.filter(p=>inView(p,'archived')).length||'';
+  $('c-trash').textContent=allProjects.filter(p=>inView(p,'trash')).length||'';
+  $('c-untagged').textContent='('+allProjects.filter(p=>inView(p,'untagged')).length+')';
+  const titles={all:'All projects',mine:'Your workspace',archived:'Archived projects',trash:'Trashed projects',untagged:'Uncategorized'};
+  $('viewTitle').textContent=titles[dashView]||dashView.slice(4);
+  const q=$('pSearch').value.trim().toLowerCase();
+  let rows=allProjects.filter(p=>inView(p,dashView)&&(!q||p.name.toLowerCase().includes(q)));
+  rows.sort((a,b)=>dashSort.k==='name'?dashSort.d*a.name.localeCompare(b.name):dashSort.d*(a.updated-b.updated));
+  $('s-name').textContent=dashSort.k==='name'?(dashSort.d>0?'↑':'↓'):'';
+  $('s-updated').textContent=dashSort.k==='updated'?(dashSort.d>0?'↑':'↓'):'';
+  const tagColor=n=>(tl.find(t=>t.name===n)||{}).color||'#9aa5b1';
+  const trash=dashView==='trash';
+  const I={copy:'<svg class="i" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>',dl:'<svg class="i" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>',arch:'<svg class="i" viewBox="0 0 24 24"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z"/></svg>',del:'<svg class="i" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>',res:'<svg class="i" viewBox="0 0 24 24"><path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18z"/></svg>'};
+  $('pRows').innerHTML=rows.map(p=>`<tr>
+    <td class="chk"><input type="checkbox" data-id="${p.id}" ${checked.has(p.id)?'checked':''}></td>
+    <td class="t"><a ${trash?'':`href="#/project/${p.id}"`}>${esc(p.name)}</a>${(p.tags||[]).map(t=>`<span class="chip"><span class="tagdot" style="background:${tagColor(t)}"></span>${esc(t)}</span>`).join('')}</td>
+    <td class="own">You</td>
+    <td>${ago(p.updated)} by You</td>
+    <td class="acts">${trash?`<button class="ibtn" title="Restore" onclick="setFlag(['${p.id}'],'trashed',false)">${I.res}</button><button class="ibtn" title="Delete forever" onclick="deleteForever(['${p.id}'])">${I.del}</button>`:
+      `<button class="ibtn" title="Copy" onclick="copyProject('${p.id}')">${I.copy}</button><button class="ibtn" title="Download .zip" onclick="downloadZipId('${p.id}')">${I.dl}</button><button class="ibtn" title="${p.archived?'Unarchive':'Archive'}" onclick="setFlag(['${p.id}'],'archived',${!p.archived})">${I.arch}</button><button class="ibtn" title="Trash" onclick="setFlag(['${p.id}'],'trashed',true)">${I.del}</button>`}</td></tr>`).join('')||
+    `<tr><td colspan="5" class="empty">${q?'No projects match your search.':trash?'Trash is empty.':'No projects here yet. Click <b>New project</b> to start.'}</td></tr>`;
+  for(const id of [...checked])if(!rows.find(r=>r.id===id))checked.delete(id);
+  $('chkAll').checked=rows.length>0&&rows.every(r=>checked.has(r.id));
+  renderBulk(trash);
+}
+function renderBulk(trash){
+  const n=checked.size,b=$('bulkBar');
+  if(!n){b.innerHTML='';return;}
+  const ids=JSON.stringify([...checked]).replace(/"/g,"'");
+  b.innerHTML=`<span class="muted">${n} selected</span>`+(trash?
+    `<button class="obtn" onclick="setFlag(${ids},'trashed',false)">Restore</button><button class="obtn dng" onclick="deleteForever(${ids})">Delete forever</button>`:
+    `<button class="obtn" onclick="bulkDownload()">Download</button><button class="obtn" onclick="setFlag(${ids},'archived',${dashView!=='archived'})">${dashView==='archived'?'Unarchive':'Archive'}</button><button class="obtn" onclick="setFlag(${ids},'trashed',true)">Trash</button><button class="obtn" onclick="openTagMenu(this)">Tag ▾</button>`);
+}
+$('pRows').addEventListener('change',e=>{const c=e.target.closest('input[data-id]');if(!c)return;c.checked?checked.add(c.dataset.id):checked.delete(c.dataset.id);renderDash();});
+function checkAll(on){checked.clear();if(on)document.querySelectorAll('#pRows input[data-id]').forEach(c=>checked.add(c.dataset.id));renderDash();}
+function setSort(k){dashSort=dashSort.k===k?{k,d:-dashSort.d}:{k,d:k==='name'?1:-1};LS.set('dashSort',dashSort);renderDash();}
+document.querySelectorAll('.dn[data-view]').forEach(b=>b.addEventListener('click',()=>{dashView=b.dataset.view;LS.set('dashView',dashView);checked.clear();renderDash();}));
+$('tagList').addEventListener('click',e=>{const d=e.target.closest('[data-deltag]');if(d){e.stopPropagation();const t=tags();const n=t[+d.dataset.deltag].name;if(!confirm(`Delete tag “${n}”? Projects are kept.`))return;t.splice(+d.dataset.deltag,1);setTags(t);allProjects.forEach(p=>{if((p.tags||[]).includes(n)){p.tags=p.tags.filter(x=>x!==n);store.put(p);}});if(dashView==='tag:'+n)dashView='all';renderDash();return;}const b=e.target.closest('[data-tv]');if(b){dashView='tag:'+b.dataset.tv;checked.clear();renderDash();}});
+async function newTag(){const n=await ask('Create new tag','Tag name');if(!n)return;const t=tags();if(t.find(x=>x.name===n))return toast('That tag already exists');t.push({name:n,color:TAG_COLORS[t.length%TAG_COLORS.length]});setTags(t);if(checked.size){await applyTag(n,true);}renderDash();}
+function openTagMenu(btn){const m=$('mTagFor');const t=tags();const sel=allProjects.filter(p=>checked.has(p.id));
+  m.innerHTML=t.map(x=>{const all=sel.every(p=>(p.tags||[]).includes(x.name));return`<button class="mi" onclick="applyTag('${esc(x.name).replace(/'/g,"\\'")}',${!all})"><span class="ck">${all?'✓':''}</span><span class="tagdot" style="background:${x.color}"></span>${esc(x.name)}</button>`;}).join('')+'<div class="msep"></div><button class="mi" onclick="newTag()">+ Create new tag</button>';
+  openMenu('mTagFor',btn);}
+async function applyTag(name,on){for(const p of allProjects)if(checked.has(p.id)){p.tags=(p.tags||[]).filter(x=>x!==name);if(on)p.tags.push(name);await store.put(p);}renderDash();}
+async function setFlag(ids,flag,val){for(const id of ids){const p=allProjects.find(x=>x.id===id);if(p){p[flag]=val;await store.put(p);}}checked.clear();renderDash();toast(flag==='trashed'?(val?'Moved to trash':'Restored'):(val?'Archived':'Unarchived'));}
+async function deleteForever(ids){if(!confirm(`Delete ${ids.length} project(s) forever? This cannot be undone.`))return;for(const id of ids)await store.del(id);allProjects=await store.all();checked.clear();renderDash();}
+async function bulkDownload(){for(const id of checked)await downloadZipId(id);}
+function openNewProject(){closeMenus();$('tplGrid').innerHTML=Object.entries(TEMPLATES).map(([k,t])=>`<button class="tcard" onclick="newFromTemplate('${k}')"><b>${t.icon} ${esc(t.name)}</b><span>${esc(t.desc)}</span></button>`).join('');openM('mNew');}
+
+// ============================================================
+//  EDITOR
+// ============================================================
+const cm=CodeMirror($('edHost'),{
+  mode:'stex',lineNumbers:true,lineWrapping:true,matchBrackets:true,autoCloseBrackets:'{}[]()$$',styleActiveLine:true,indentUnit:2,tabSize:2,theme:settings.theme,
+  foldGutter:true,gutters:['CodeMirror-linenumbers','CodeMirror-foldgutter'],
+  extraKeys:{'Ctrl-S':()=>compile(),'Cmd-S':()=>compile(),'Ctrl-Enter':()=>compile(),'Cmd-Enter':()=>compile(),
+    'Ctrl-B':()=>wrap('\\textbf{','}'),'Cmd-B':()=>wrap('\\textbf{','}'),'Ctrl-I':()=>wrap('\\textit{','}'),'Cmd-I':()=>wrap('\\textit{','}'),
+    'Ctrl-/':'toggleComment','Cmd-/':'toggleComment','Ctrl-Space':'autocomplete','Ctrl-Shift-F':'replace','Cmd-Alt-F':'replace','Ctrl-G':'jumpToLine',
+    'Tab':c=>c.somethingSelected()?c.indentSelection('add'):c.replaceSelection('  ')}
+});
+// fold \begin..\end blocks and \section bodies
+CodeMirror.registerHelper('fold','latexenv',(c,start)=>{
+  const line=c.getLine(start.line);let m=line.match(/\\begin\{([^}]+)\}/);
+  if(m){const env=m[1];let depth=0;for(let i=start.line;i<Math.min(c.lineCount(),start.line+3000);i++){const l=c.getLine(i);const re=new RegExp('\\\\(begin|end)\\{'+env.replace(/[*]/g,'\\*')+'\\}','g');let mm;while((mm=re.exec(l))){if(mm[1]==='begin')depth++;else{depth--;if(depth===0&&i>start.line)return{from:CodeMirror.Pos(start.line,line.length),to:CodeMirror.Pos(i,mm.index)};}}}}
+  m=line.match(/^\s*\\(part|chapter|section|subsection|subsubsection)\*?[\[{]/);
+  if(m){const lv=['part','chapter','section','subsection','subsubsection'];const my=lv.indexOf(m[1]);let i=start.line+1;for(;i<c.lineCount();i++){const n=c.getLine(i).match(/^\s*\\(part|chapter|section|subsection|subsubsection)\*?[\[{]/);if((n&&lv.indexOf(n[1])<=my)||/^\s*\\end\{document\}/.test(c.getLine(i)))break;}
+    let e=i-1;while(e>start.line&&!c.getLine(e).trim())e--;if(e>start.line)return{from:CodeMirror.Pos(start.line,line.length),to:CodeMirror.Pos(e,c.getLine(e).length)};}
+});
+cm.setOption('foldOptions',{rangeFinder:CodeMirror.fold.latexenv,widget:'…'});
+$('edHost').appendChild($('binView'));
+
+let saveT,autoT;
+cm.on('changes',()=>{
+  if(!current||!project||!project.files[current])return;
+  project.files[current].content=cm.getValue();
+  clearTimeout(saveT);saveT=setTimeout(saveProject,700);
+  clearTimeout(outlineT);outlineT=setTimeout(renderOutline,350);
+  if(settings.auto==='on'){clearTimeout(autoT);autoT=setTimeout(()=>compile(true),2500);}
+  scheduleVisual();
+});
+cm.on('cursorActivity',()=>{scheduleVisual();clearTimeout(curSecT);curSecT=setTimeout(markCurrentSection,150);});
+cm.on('viewportChange',()=>scheduleVisual());
+cm.on('inputRead',(c,ch)=>{
+  if(settings.hints!=='on')return;
+  const t=ch.text.join('');const line=c.getLine(c.getCursor().line).slice(0,c.getCursor().ch);
+  if(t==='\\'||/\\[a-zA-Z]{2,}$/.test(line)||/\\(?:[a-zA-Z]*cite[a-zA-Z]*|[a-zA-Z]*ref|begin|end|input|include|includegraphics(?:\[[^\]]*\])?|bibliography|usepackage(?:\[[^\]]*\])?)\{[^}]*$/.test(line)){
+    if(!c.state.completionActive)c.showHint({hint:latexHint,completeSingle:false});
+  }
+});
+function applySettings(){
+  cm.setOption('theme',settings.theme);
+  document.body.classList.toggle('edlight',settings.theme==='selight');
+  document.documentElement.style.setProperty('--edfs',settings.font+'px');
+  cm.setOption('autoCloseBrackets',settings.brackets==='on'?'{}[]()$$':false);
+  cm.setOption('inputStyle',settings.spell==='on'?'contenteditable':'textarea');
+  cm.setOption('spellcheck',settings.spell==='on');
+  document.querySelectorAll('[data-s]').forEach(el=>{el.value=settings[el.dataset.s];});
+  cm.refresh();
+}
+document.querySelectorAll('[data-s]').forEach(el=>el.addEventListener('change',()=>setSetting(el.dataset.s,el.value)));
+function setSetting(k,v){settings[k]=v;LS.set('settings',settings);applySettings();if(k==='compiler'||k==='auto')toast(k==='compiler'?'Compiler: '+v:'Auto compile '+v);}
+function openSettings(){closeMenus();if(project){$('setMain').innerHTML=Object.keys(project.files).filter(f=>/\.tex$/i.test(f)).map(f=>`<option ${f===project.main?'selected':''}>${esc(f)}</option>`).join('');$('setMain').parentElement.hidden=false;}else $('setMain').parentElement.hidden=true;applySettings();openM('mSettings');}
+$('setMain').addEventListener('change',()=>{project.main=$('setMain').value;saveProject();renderTree();toast('Main document: '+project.main);});
+
+// ---------- editing helpers ----------
+function canEdit(){return current&&project.files[current]&&project.files[current].type==='text';}
+function wrap(a,b){if(!canEdit())return;const sel=cm.getSelection();cm.replaceSelection(a+sel+b);if(!sel){const c=cm.getCursor();cm.setCursor({line:c.line,ch:c.ch-b.length});}cm.focus();}
+function insertSnippet(s){if(!canEdit())return;const sel=cm.getSelection();s=s.replace('$SEL',sel);const idx=s.indexOf('$0');s=s.replace('$0','');const from=cm.getCursor('from');cm.replaceSelection(s);if(idx>=0)cm.setCursor(cm.posFromIndex(cm.indexFromPos(from)+idx));cm.focus();}
+function curIndent(){return(cm.getLine(cm.getCursor().line).match(/^\s*/)||[''])[0];}
+function insEnv(env,body=''){const sel=cm.getSelection();const ind=curIndent();insertSnippet(`\\begin{${env}}\n${ind}  ${sel||body}$0\n${ind}\\end{${env}}`);}
+function insSection(level){if(!level)return;const sel=cm.getSelection();insertSnippet(`\\${level}{${sel}$0}`);}
+function insertAndHint(a,b){insertSnippet(a+'$0'+b);setTimeout(()=>cm.showHint({hint:latexHint,completeSingle:false}),30);}
+function insFigure(){const imgs=Object.keys(project.files).filter(p=>IMG_EXT.test(p)||/\.(pdf|eps)$/i.test(p));const img=imgs[0]||'example-image';
+  insertSnippet(`\\begin{figure}[htbp]\n  \\centering\n  \\includegraphics[width=0.7\\linewidth]{${img}}\n  \\caption{$0Caption}\n  \\label{fig:label}\n\\end{figure}\n`);
+  if(!imgs.length)toast('Upload an image in the file tree, then put its name in \\includegraphics{…}',4500);}
+function insTable(){
+  const r=Math.max(1,+$('tRows').value||3),c=Math.max(1,+$('tCols').value||3),bt=$('tStyle').value==='booktabs';
+  const spec=bt?'l'.repeat(c):'|'+Array(c).fill('c').join('|')+'|';
+  const row=i=>Array.from({length:c},(_,j)=>i===0?`Header ${j+1}`:'Cell').join(' & ')+' \\\\';
+  let body='';for(let i=0;i<r;i++){body+='    '+row(i)+'\n';if(bt&&i===0)body+='    \\midrule\n';if(!bt)body+='    \\hline\n';}
+  insertSnippet(`\\begin{table}[htbp]\n  \\centering\n  \\caption{$0Table caption}\n  \\label{tab:label}\n  \\begin{tabular}{${spec}}\n${bt?'    \\toprule\n':'    \\hline\n'}${body}${bt?'    \\bottomrule\n':''}  \\end{tabular}\n\\end{table}\n`);
+  if(bt&&!/\\usepackage(\[[^\]]*\])?\{[^}]*booktabs/.test(project.files[project.main]?.content||''))toast('Tip: add \\usepackage{booktabs} to the preamble',4500);
+  closeM('mTable');}
+
+// ---------- symbol palette ----------
+const SYM={
+ 'Greek':['\\alpha','\\beta','\\gamma','\\delta','\\epsilon','\\varepsilon','\\zeta','\\eta','\\theta','\\vartheta','\\iota','\\kappa','\\lambda','\\mu','\\nu','\\xi','\\pi','\\rho','\\sigma','\\tau','\\upsilon','\\phi','\\varphi','\\chi','\\psi','\\omega','\\Gamma','\\Delta','\\Theta','\\Lambda','\\Xi','\\Pi','\\Sigma','\\Phi','\\Psi','\\Omega'],
+ 'Structures':[['\\frac{$0}{}','a⁄b'],['\\sqrt{$0}','√'],['\\sqrt[n]{$0}','ⁿ√'],['^{$0}','xⁿ'],['_{$0}','xₙ'],['\\sum_{i=1}^{n} $0','∑'],['\\prod_{i=1}^{n} $0','∏'],['\\int_{a}^{b} $0\\,dx','∫'],['\\iint_{D} $0\\,dA','∬'],['\\oint_{C} $0','∮'],['\\lim_{x \\to \\infty} $0','lim'],['\\frac{d}{dx}$0','d/dx'],['\\frac{\\partial $0}{\\partial x}','∂/∂x'],['\\binom{n}{k}$0','(ⁿₖ)'],['\\left( $0 \\right)','( )'],['\\left[ $0 \\right]','[ ]'],['\\left\\{ $0 \\right\\}','{ }'],['\\left| $0 \\right|','| |'],['\\begin{pmatrix}\n  $0a & b \\\\\n  c & d\n\\end{pmatrix}','(⋮)'],['\\begin{bmatrix}\n  $0a & b \\\\\n  c & d\n\\end{bmatrix}','[⋮]'],['\\begin{vmatrix}\n  $0a & b \\\\\n  c & d\n\\end{vmatrix}','|⋮|'],['\\begin{cases}\n  $0a & \\text{if } x > 0 \\\\\n  b & \\text{otherwise}\n\\end{cases}','cases'],['\\vec{$0}','v⃗'],['\\hat{$0}','x̂'],['\\bar{$0}','x̄'],['\\dot{$0}','ẋ'],['\\tilde{$0}','x̃'],['\\mathbf{$0}','𝐁'],['\\mathbb{$0}','ℝ'],['\\mathcal{$0}','𝒞'],['\\text{$0}','text']],
+ 'Operators':['\\pm','\\mp','\\times','\\div','\\cdot','\\ast','\\circ','\\bullet','\\oplus','\\otimes','\\cup','\\cap','\\setminus','\\wedge','\\vee','\\nabla','\\partial','\\infty','\\forall','\\exists','\\nexists','\\neg','\\emptyset','\\Re','\\Im','\\hbar','\\ell','\\aleph','\\angle','\\ldots','\\cdots','\\vdots','\\ddots'],
+ 'Relations':['=','\\neq','<','>','\\leq','\\geq','\\ll','\\gg','\\approx','\\sim','\\simeq','\\cong','\\equiv','\\propto','\\in','\\notin','\\subset','\\subseteq','\\supset','\\supseteq','\\perp','\\parallel','\\mid','\\models','\\vdash'],
+ 'Arrows':['\\to','\\leftarrow','\\rightarrow','\\leftrightarrow','\\Rightarrow','\\Leftarrow','\\Leftrightarrow','\\implies','\\iff','\\mapsto','\\uparrow','\\downarrow','\\longrightarrow','\\rightleftharpoons','\\hookrightarrow'],
+ 'Functions':['\\sin','\\cos','\\tan','\\cot','\\sec','\\csc','\\arcsin','\\arccos','\\arctan','\\sinh','\\cosh','\\tanh','\\log','\\ln','\\exp','\\det','\\dim','\\ker','\\max','\\min','\\sup','\\inf','\\arg','\\gcd']};
+const GLYPH={'\\alpha':'α','\\beta':'β','\\gamma':'γ','\\delta':'δ','\\epsilon':'ϵ','\\varepsilon':'ε','\\zeta':'ζ','\\eta':'η','\\theta':'θ','\\vartheta':'ϑ','\\iota':'ι','\\kappa':'κ','\\lambda':'λ','\\mu':'μ','\\nu':'ν','\\xi':'ξ','\\pi':'π','\\rho':'ρ','\\sigma':'σ','\\tau':'τ','\\upsilon':'υ','\\phi':'ϕ','\\varphi':'φ','\\chi':'χ','\\psi':'ψ','\\omega':'ω','\\Gamma':'Γ','\\Delta':'Δ','\\Theta':'Θ','\\Lambda':'Λ','\\Xi':'Ξ','\\Pi':'Π','\\Sigma':'Σ','\\Phi':'Φ','\\Psi':'Ψ','\\Omega':'Ω','\\pm':'±','\\mp':'∓','\\times':'×','\\div':'÷','\\cdot':'·','\\ast':'∗','\\circ':'∘','\\bullet':'•','\\oplus':'⊕','\\otimes':'⊗','\\cup':'∪','\\cap':'∩','\\setminus':'∖','\\wedge':'∧','\\vee':'∨','\\nabla':'∇','\\partial':'∂','\\infty':'∞','\\forall':'∀','\\exists':'∃','\\nexists':'∄','\\neg':'¬','\\emptyset':'∅','\\Re':'ℜ','\\Im':'ℑ','\\hbar':'ℏ','\\ell':'ℓ','\\aleph':'ℵ','\\angle':'∠','\\ldots':'…','\\cdots':'⋯','\\vdots':'⋮','\\ddots':'⋱','\\neq':'≠','\\leq':'≤','\\geq':'≥','\\ll':'≪','\\gg':'≫','\\approx':'≈','\\sim':'∼','\\simeq':'≃','\\cong':'≅','\\equiv':'≡','\\propto':'∝','\\in':'∈','\\notin':'∉','\\subset':'⊂','\\subseteq':'⊆','\\supset':'⊃','\\supseteq':'⊇','\\perp':'⊥','\\parallel':'∥','\\mid':'∣','\\models':'⊨','\\vdash':'⊢','\\to':'→','\\leftarrow':'←','\\rightarrow':'→','\\leftrightarrow':'↔','\\Rightarrow':'⇒','\\Leftarrow':'⇐','\\Leftrightarrow':'⇔','\\implies':'⟹','\\iff':'⟺','\\mapsto':'↦','\\uparrow':'↑','\\downarrow':'↓','\\longrightarrow':'⟶','\\rightleftharpoons':'⇌','\\hookrightarrow':'↪'};
+(function(){let h='';for(const[cat,list]of Object.entries(SYM)){h+=`<div class="symcat">${cat}</div><div class="symrow">`;list.forEach(it=>{const[code,label]=Array.isArray(it)?it:[it,GLYPH[it]||it.replace('\\','')];h+=`<button class="sym" title="${esc(code.replace(/\$0/g,''))}" data-c="${esc(code)}">${esc(label)}</button>`;});h+='</div>';}
+  $('symBody').innerHTML=h;$('symBody').addEventListener('click',e=>{const b=e.target.closest('.sym');if(!b)return;let code=b.dataset.c;if(!code.includes('$0'))code+=(/[a-zA-Z]$/.test(code)?' ':'')+'$0';insertSnippet(code);});})();
+
+// ---------- autocomplete ----------
+const CMDS=['\\section{$0}','\\subsection{$0}','\\subsubsection{$0}','\\chapter{$0}','\\paragraph{$0}','\\textbf{$0}','\\textit{$0}','\\emph{$0}','\\underline{$0}','\\texttt{$0}','\\textsc{$0}','\\label{$0}','\\ref{$0}','\\eqref{$0}','\\pageref{$0}','\\cite{$0}','\\citep{$0}','\\citet{$0}','\\footnote{$0}','\\usepackage{$0}','\\documentclass{$0}','\\includegraphics[width=\\linewidth]{$0}','\\input{$0}','\\include{$0}','\\caption{$0}','\\centering','\\maketitle','\\tableofcontents','\\listoffigures','\\listoftables','\\newpage','\\clearpage','\\noindent','\\item $0','\\title{$0}','\\author{$0}','\\date{$0}','\\today','\\bibliography{$0}','\\bibliographystyle{$0}','\\href{$0}{}','\\url{$0}','\\frac{$0}{}','\\dfrac{$0}{}','\\sqrt{$0}','\\sum_{$0}^{}','\\prod_{$0}^{}','\\int_{$0}^{}','\\iint','\\oint','\\lim_{$0}','\\mathbb{$0}','\\mathcal{$0}','\\mathbf{$0}','\\mathrm{$0}','\\text{$0}','\\left( $0 \\right)','\\vec{$0}','\\hat{$0}','\\bar{$0}','\\quad','\\qquad','\\hspace{$0}','\\vspace{$0}','\\newcommand{$0}{}','\\renewcommand{$0}{}','\\DeclareMathOperator{$0}{}','\\hline','\\toprule','\\midrule','\\bottomrule','\\multicolumn{$0}{}{}','\\textwidth','\\linewidth','\\small','\\large','\\Large','\\footnotesize','\\appendix'].concat(Object.keys(GLYPH).map(g=>g+' '));
+const ENVS=['equation','equation*','align','align*','gather','multline','split','cases','pmatrix','bmatrix','vmatrix','matrix','itemize','enumerate','description','figure','table','tabular','center','abstract','theorem','lemma','proof','definition','corollary','proposition','remark','example','quote','verbatim','minipage','frame','thebibliography','document','subfigure','array','algorithm','lstlisting'];
+const PKGS=['amsmath','amssymb','amsthm','graphicx','hyperref','geometry','booktabs','xcolor','tikz','pgfplots','siunitx','natbib','biblatex','cleveref','float','caption','subcaption','listings','algorithm2e','enumitem','fancyhdr','titlesec','multirow','longtable','physics','mathtools','bm','fontspec','babel','csquotes','lipsum','url','setspace','tabularx','array','xurl'];
+function bibKeys(){const k=new Set();for(const[p,f]of Object.entries(project.files))if(/\.bib$/i.test(p)&&f.type==='text')for(const m of f.content.matchAll(/@\w+\s*\{\s*([^,\s]+)\s*,/g))if(!/^(string|comment|preamble)$/i.test(m[1]))k.add(m[1]);return[...k];}
+function labels(){const k=new Set();for(const[p,f]of Object.entries(project.files))if(/\.tex$/i.test(p)&&f.type==='text')for(const m of f.content.matchAll(/\\label\{([^}]+)\}/g))k.add(m[1]);return[...k];}
+function latexHint(c){
+  const cur=c.getCursor(),line=c.getLine(cur.line).slice(0,cur.ch);let m;
+  const mk=(arr,pre)=>({list:arr.filter(x=>x.toLowerCase().startsWith(pre.toLowerCase())).slice(0,60),from:CodeMirror.Pos(cur.line,cur.ch-pre.length),to:cur});
+  if((m=line.match(/\\[a-zA-Z]*cite[a-zA-Z]*\{(?:[^}]*,\s*)?([^,}]*)$/)))return mk(bibKeys(),m[1]);
+  if((m=line.match(/\\[a-zA-Z]*ref\{([^}]*)$/)))return mk(labels(),m[1]);
+  if((m=line.match(/\\usepackage(?:\[[^\]]*\])?\{(?:[^}]*,\s*)?([^,}]*)$/)))return mk(PKGS,m[1]);
+  if((m=line.match(/\\(?:input|include)\{([^}]*)$/)))return mk(Object.keys(project.files).filter(p=>/\.tex$/i.test(p)).map(p=>p.replace(/\.tex$/i,'')),m[1]);
+  if((m=line.match(/\\includegraphics(?:\[[^\]]*\])?\{([^}]*)$/)))return mk(Object.keys(project.files).filter(p=>IMG_EXT.test(p)||/\.(pdf|eps)$/i.test(p)),m[1]);
+  if((m=line.match(/\\bibliography\{([^}]*)$/)))return mk(Object.keys(project.files).filter(p=>/\.bib$/i.test(p)).map(p=>p.replace(/\.bib$/i,'')),m[1]);
+  if((m=line.match(/\\(begin|end)\{([^}]*)$/))){const isB=m[1]==='begin',pre=m[2];
+    return{list:ENVS.filter(e=>e.startsWith(pre)).map(e=>({text:e,displayText:e,hint:(ci,data)=>{const rest=ci.getLine(cur.line).slice(cur.ch);const close=rest.startsWith('}')?'':'}';
+      if(isB){const ind=(ci.getLine(cur.line).match(/^\s*/)||[''])[0];ci.replaceRange(e+close+'\n'+ind+'  \n'+ind+'\\end{'+e+'}',data.from,CodeMirror.Pos(cur.line,cur.ch+(close?0:1)));ci.setCursor(CodeMirror.Pos(data.from.line+1,ind.length+2));}
+      else ci.replaceRange(e+close,data.from,data.to);}})),from:CodeMirror.Pos(cur.line,cur.ch-pre.length),to:cur};}
+  if((m=line.match(/\\([a-zA-Z]*)$/))){const from=cur.ch-m[1].length-1,pre='\\'+m[1];
+    const items=CMDS.filter(s=>s.startsWith(pre)).slice(0,80).map(s=>({text:s,displayText:s.replace(/\$0/g,'').trim(),hint:(ci,data)=>{const i=s.indexOf('$0');const t=s.replace('$0','');ci.replaceRange(t,data.from,data.to);if(i>=0)ci.setCursor(ci.posFromIndex(ci.indexFromPos(data.from)+i));}}));
+    if(m[1]==='')items.unshift({text:'\\begin{}',displayText:'\\begin{…} environment',hint:(ci,data)=>{ci.replaceRange('\\begin{}',data.from,data.to);ci.setCursor(CodeMirror.Pos(data.from.line,data.from.ch+7));setTimeout(()=>ci.showHint({hint:latexHint,completeSingle:false}),10);}});
+    return{list:items,from:CodeMirror.Pos(cur.line,from),to:cur};}
+  return null;
+}
+
+// ============================================================
+//  VISUAL MODE (rendered headings, math, citations, images – click to edit source)
+// ============================================================
+let visual=LS.get('visual',false),vMarks=[],vT,imgUrls={};
+function setEdMode(m){visual=m==='visual';LS.set('visual',visual);$('modeCode').classList.toggle('on',!visual);$('modeVis').classList.toggle('on',visual);refreshVisual();cm.focus();}
+function scheduleVisual(){if(!visual&&!vMarks.length)return;clearTimeout(vT);vT=setTimeout(refreshVisual,90);}
+function clearVisual(){if(vMarks.length)cm.operation(()=>vMarks.forEach(m=>m.clear()));vMarks=[];}
+function katexMacros(){
+  const src=Object.entries(project.files).filter(([p,f])=>f.type==='text'&&/\.(tex|sty)$/i.test(p)).map(([,f])=>f.content.split('\\begin{document}')[0]).join('\n');
+  const mac={};
+  for(const m of src.matchAll(/\\(?:re)?newcommand\*?\{?(\\[a-zA-Z]+)\}?(?:\[\d\])?\{((?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*)\}/g))mac[m[1]]=m[2];
+  for(const m of src.matchAll(/\\DeclareMathOperator\*?\{?(\\[a-zA-Z]+)\}?\{([^}]*)\}/g))mac[m[1]]='\\operatorname{'+m[2]+'}';
+  return mac;
+}
+function renderMath(tex,display,mac){
+  const el=document.createElement('span');
+  tex=tex.replace(/\\label\{[^}]*\}/g,'').replace(/\\(nonumber|notag)\b/g,'');
+  tex=tex.replace(/\\begin\{multline(\*?)\}/g,'\\begin{gather$1}').replace(/\\end\{multline(\*?)\}/g,'\\end{gather$1}');
+  if(window.katex){try{katex.render(tex,el,{displayMode:display,throwOnError:false,macros:{...mac},strict:'ignore',trust:false});}catch(e){el.textContent=tex;}}else el.textContent=tex;
+  return el;
+}
+function imgUrl(path){
+  const cands=[path,path+'.png',path+'.jpg',path+'.jpeg',path+'.pdf'];
+  const p=cands.find(c=>project.files[c]&&project.files[c].type==='bin'&&IMG_EXT.test(c));
+  if(!p)return null;
+  if(!imgUrls[p])imgUrls[p]=URL.createObjectURL(project.files[p].content);
+  return imgUrls[p];
+}
+function refreshVisual(){
+  clearVisual();
+  cm.getWrapperElement().classList.toggle('visual',visual&&canEdit()&&/\.tex$/i.test(current));
+  if(!visual||!canEdit()||!/\.tex$/i.test(current))return;
+  const text=cm.getValue();
+  const masked=text.replace(/(^|[^\\])(%.*)$/gm,(m,p,c)=>p+' '.repeat(c.length)).replace(/\\begin\{(verbatim|lstlisting|minted)\}[\s\S]*?\\end\{\1\}/g,m=>' '.repeat(m.length));
+  const bd=masked.indexOf('\\begin{document}');
+  const start=bd>=0?bd+16:0;
+  const vp=cm.getViewport();
+  const vFrom=cm.indexFromPos({line:Math.max(0,vp.from-40),ch:0}),vTo=cm.indexFromPos({line:Math.min(cm.lineCount()-1,vp.to+40),ch:0})+500;
+  const selFrom=cm.indexFromPos(cm.getCursor('from')),selTo=cm.indexFromPos(cm.getCursor('to'));
+  const ranges=[];
+  const taken=(a,b)=>ranges.some(r=>a<r.to&&b>r.from);
+  const add=(a,b,kind,data)=>{if(b<=start||a<start||b<vFrom||a>vTo)return;if(taken(a,b))return;ranges.push({from:a,to:b,kind,data});};
+  const scan=(re,fn)=>{re.lastIndex=start;let m;while((m=re.exec(masked))){fn(m);if(m[0].length===0)re.lastIndex++;}};
+  scan(/\\begin\{(equation\*?|align\*?|gather\*?|multline\*?|alignat\*?|flalign\*?)\}[\s\S]*?\\end\{\1\}/g,m=>add(m.index,m.index+m[0].length,'dmath',text.slice(m.index,m.index+m[0].length).replace(/^\\begin\{equation\*?\}|\\end\{equation\*?\}$/g,'')));
+  scan(/\\\[([\s\S]*?)\\\]/g,m=>add(m.index,m.index+m[0].length,'dmath',text.substr(m.index+2,m[1].length)));
+  scan(/\$\$([\s\S]*?)\$\$/g,m=>add(m.index,m.index+m[0].length,'dmath',text.substr(m.index+2,m[1].length)));
+  scan(/\\\(([\s\S]*?)\\\)/g,m=>add(m.index,m.index+m[0].length,'math',text.substr(m.index+2,m[1].length)));
+  scan(/(^|[^\\$])\$([^$\n]+?)\$/g,m=>{const a=m.index+m[1].length;add(a,a+m[2].length+2,'math',text.substr(a+1,m[2].length));});
+  scan(/\\(chapter|section|subsection|subsubsection|paragraph)\*?(?:\[[^\]\n]*\])?\{((?:[^{}\n]|\{[^{}\n]*\})*)\}/g,m=>add(m.index,m.index+m[0].length,'h',{lv:m[1],t:text.substr(m.index+m[0].length-1-m[2].length,m[2].length)}));
+  scan(/\\(textbf|textit|emph|underline|texttt)\{([^{}\n]*)\}/g,m=>add(m.index,m.index+m[0].length,'st',{c:m[1],t:m[2]}));
+  scan(/\\includegraphics(?:\[[^\]]*\])?\{([^}\n]*)\}/g,m=>add(m.index,m.index+m[0].length,'img',m[1].trim()));
+  scan(/\\(cite[a-zA-Z]*|ref|eqref|autoref|cref|Cref|pageref|label|url)\{([^}\n]*)\}/g,m=>add(m.index,m.index+m[0].length,'chip',{c:m[1],t:m[2]}));
+  scan(/\\(maketitle|tableofcontents|listoffigures|listoftables|newpage|clearpage|appendix)\b/g,m=>add(m.index,m.index+m[0].length,'chip',{c:m[1],t:''}));
+  scan(/\\item\b/g,m=>add(m.index,m.index+5,'bullet'));
+  let mac=null;
+  cm.operation(()=>{
+    for(const r of ranges){
+      if((selFrom>=r.from&&selFrom<=r.to)||(selTo>=r.from&&selTo<=r.to)||(selFrom<=r.from&&selTo>=r.to))continue;
+      let el;
+      if(r.kind==='math'||r.kind==='dmath'){mac=mac||katexMacros();el=renderMath(r.data,r.kind==='dmath',mac);el.className=r.kind==='dmath'?'vis-dmath':'vis-math';}
+      else if(r.kind==='h'){el=document.createElement('span');el.className='vis-h vis-'+r.data.lv;el.textContent=r.data.t.replace(/\\[a-zA-Z]+\s*/g,'').replace(/[{}]/g,'')||' ';}
+      else if(r.kind==='st'){el=document.createElement('span');el.className={textbf:'vis-b',textit:'vis-i',emph:'vis-i',underline:'vis-u',texttt:'vis-tt'}[r.data.c];el.textContent=r.data.t||' ';}
+      else if(r.kind==='img'){const u=imgUrl(r.data);el=document.createElement('span');el.className='vis-img';if(u){const im=document.createElement('img');im.src=u;el.appendChild(im);}else{el.className='vis-chip';el.textContent='🖼 '+r.data;}}
+      else if(r.kind==='chip'){el=document.createElement('span');el.className='vis-chip';const ic={label:'🏷',url:'🔗'}[r.data.c]||(/cite/.test(r.data.c)?'📖':/ref/.test(r.data.c)?'↪':'⚙');el.textContent=ic+' '+(r.data.t||r.data.c);}
+      else if(r.kind==='bullet'){el=document.createElement('span');el.className='vis-bullet';el.textContent='•';}
+      const from=cm.posFromIndex(r.from),to=cm.posFromIndex(r.to);
+      el.addEventListener('mousedown',e=>{e.preventDefault();e.stopPropagation();const inner=r.kind==='dmath'||r.kind==='math'?Math.min(r.to,r.from+2):r.kind==='h'||r.kind==='st'||r.kind==='chip'?Math.max(r.from,r.to-1):r.from;cm.setCursor(cm.posFromIndex(inner));cm.focus();});
+      vMarks.push(cm.markText(from,to,{replacedWith:el,clearOnEnter:true,handleMouseEvents:false}));
+    }
+  });
+}
+
+// ============================================================
+//  PROJECT / FILE TREE / TABS
+// ============================================================
+async function saveProject(){if(!project)return;project.updated=Date.now();try{await store.put(project);}catch(e){console.error(e);toast('Could not save: '+e.message);}}
+function folderList(){const s=new Set(project.folders||[]);for(const p of Object.keys(project.files)){const parts=p.split('/');for(let i=1;i<parts.length;i++)s.add(parts.slice(0,i).join('/'));}return[...s].sort();}
+const FI={
+  tex:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>',
+  img:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>',
+  bib:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>',
+  folder:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>',
+  file:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></svg>'};
+function renderTree(){
+  const folders=folderList(),files=Object.keys(project.files).sort((a,b)=>a.localeCompare(b));
+  const ico=p=>/\.tex$/i.test(p)?FI.tex:/\.bib$/i.test(p)?FI.bib:IMG_EXT.test(p)?FI.img:FI.file;
+  let h='';
+  const walk=(dir,depth)=>{const pre=dir?dir+'/':'';
+    for(const d of folders.filter(f=>f.startsWith(pre)&&f!==dir&&!f.slice(pre.length).includes('/'))){const open=openFolders.has(d);
+      h+=`<div class="node${selected===d+'/'?' sel':''}" data-dir="${esc(d)}" style="padding-left:${6+depth*14}px"><span class="ic" style="width:10px">${open?'▾':'▸'}</span><span class="ic">${FI.folder}</span><span class="nm">${esc(d.split('/').pop())}</span><button class="more" data-more="${esc(d)}/">⋮</button></div>`;
+      if(open)walk(d,depth+1);}
+    for(const f of files.filter(f=>f.startsWith(pre)&&!f.slice(pre.length).includes('/')))
+      h+=`<div class="node${selected===f?' sel':''}" data-file="${esc(f)}" style="padding-left:${6+depth*14+(depth?10:0)}px"><span class="ic">${ico(f)}</span><span class="nm">${esc(f.split('/').pop())}</span>${f===project.main?'<span class="mainb">main</span>':''}<button class="more" data-more="${esc(f)}">⋮</button></div>`;
+  };
+  walk('',0);
+  $('tree').innerHTML=h||'<div class="olnone">No files – use + to add one</div>';
+}
+$('tree').addEventListener('click',e=>{
+  const mo=e.target.closest('[data-more]');
+  if(mo){e.stopPropagation();selected=mo.dataset.more;renderTree();$('nmMain').hidden=!/\.tex$/i.test(selected);const r=mo.getBoundingClientRect();openMenu('mNode',null,r.left,r.bottom);return;}
+  const n=e.target.closest('.node');if(!n)return;
+  if(n.dataset.dir!=null){const d=n.dataset.dir;selected=d+'/';openFolders.has(d)?openFolders.delete(d):openFolders.add(d);LS.set('openFolders',[...openFolders]);renderTree();}
+  else openFile(n.dataset.file);
+});
+$('tree').addEventListener('contextmenu',e=>{const n=e.target.closest('.node');if(!n)return;e.preventDefault();selected=n.dataset.file||n.dataset.dir+'/';renderTree();$('nmMain').hidden=!/\.tex$/i.test(selected);openMenu('mNode',null,e.clientX,e.clientY);});
+$('tree').addEventListener('dblclick',e=>{if(e.target.closest('.node'))renameSel();});
+$('tree').addEventListener('keydown',e=>{if(e.key==='Delete')deleteSel();if(e.key==='F2')renameSel();});
+$('tree').addEventListener('dragover',e=>{e.preventDefault();$('tree').classList.add('drop');});
+$('tree').addEventListener('dragleave',()=>$('tree').classList.remove('drop'));
+$('tree').addEventListener('drop',e=>{e.preventDefault();$('tree').classList.remove('drop');const fs=[...e.dataTransfer.files];if(fs.length)addUploads(fs);});
+function nodeAct(a){closeMenus();if(!selected)return;
+  if(a==='open'){if(!selected.endsWith('/'))openFile(selected);}
+  else if(a==='rename')renameSel();
+  else if(a==='delete')deleteSel();
+  else if(a==='main'){project.main=selected;saveProject();renderTree();toast('Main document: '+selected);}
+  else if(a==='download'){if(selected.endsWith('/'))return toast('Use File → Download as source for folders');const f=project.files[selected];saveAs(f.type==='text'?new Blob([f.content],{type:'text/plain'}):f.content,selected.split('/').pop());}}
+function selDir(){if(!selected)return'';if(selected.endsWith('/'))return selected.slice(0,-1);return selected.includes('/')?selected.slice(0,selected.lastIndexOf('/')):'';}
+
+function renderTabs(){
+  tabs=tabs.filter(t=>project.files[t]);
+  $('tabs').innerHTML=tabs.map(t=>`<div class="tab${t===current?' on':''}" data-tab="${esc(t)}" title="${esc(t)}"><span style="width:14px;display:inline-grid">${/\.tex$/i.test(t)?FI.tex:/\.bib$/i.test(t)?FI.bib:IMG_EXT.test(t)?FI.img:FI.file}</span>${esc(t.split('/').pop())}<button class="x" data-close="${esc(t)}">×</button></div>`).join('');
+}
+$('tabs').addEventListener('click',e=>{const x=e.target.closest('[data-close]');if(x){e.stopPropagation();closeTab(x.dataset.close);return;}const t=e.target.closest('[data-tab]');if(t)openFile(t.dataset.tab);});
+$('tabs').addEventListener('auxclick',e=>{const t=e.target.closest('[data-tab]');if(t&&e.button===1)closeTab(t.dataset.tab);});
+function closeTab(p){const i=tabs.indexOf(p);if(i<0)return;tabs.splice(i,1);if(p===current){const n=tabs[Math.min(i,tabs.length-1)];if(n)openFile(n);else{current=null;clearVisual();cm.swapDoc(CodeMirror.Doc('','stex'));cm.setOption('readOnly','nocursor');$('binView').style.display='none';cm.getWrapperElement().style.display='';renderOutline();}}renderTabs();}
+
+function openFile(path){
+  if(!project.files[path])return;
+  current=path;selected=path;
+  if(!tabs.includes(path))tabs.push(path);
+  const f=project.files[path];
+  if(path.includes('/')){const parts=path.split('/');for(let i=1;i<parts.length;i++)openFolders.add(parts.slice(0,i).join('/'));}
+  clearVisual();
+  if(f.type==='text'){
+    $('binView').style.display='none';
+    if(!docs[path])docs[path]=CodeMirror.Doc(f.content,/\.(tex|sty|cls|bib)$/i.test(path)?'stex':'text/plain');
+    cm.swapDoc(docs[path]);cm.setOption('readOnly',false);cm.getWrapperElement().style.display='';cm.refresh();cm.focus();
+  }else{
+    cm.getWrapperElement().style.display='none';
+    const bv=$('binView');bv.style.display='flex';const url=URL.createObjectURL(f.content);
+    bv.innerHTML=(IMG_EXT.test(path)?`<img src="${url}" alt="">`:/\.pdf$/i.test(path)?`<iframe src="${url}" style="width:100%;height:85%;border:0;background:#fff"></iframe>`:'<div style="font-size:46px">📦</div>')+`<div>${esc(path)} · ${(f.content.size/1024).toFixed(1)} KB</div>`+(IMG_EXT.test(path)||/\.pdf$/i.test(path)?`<div>Use it with <code>\\includegraphics{${esc(path)}}</code></div>`:'');
+  }
+  LS.set('lastFile_'+project.id,path);
+  renderTree();renderTabs();renderOutline();markErrorsFor(path);refreshVisual();
+}
+function uniquePath(p){if(!project.files[p])return p;const m=p.match(/^(.*?)(\.[^./]*)?$/);let i=1;while(project.files[`${m[1]} (${i})${m[2]||''}`])i++;return`${m[1]} (${i})${m[2]||''}`;}
+async function newFile(){closeMenus();const dir=selDir();const name=await ask('New file','File name (e.g. chapter1.tex, refs.bib)',(dir?dir+'/':'')+'untitled.tex');if(!name)return;const p=name.replace(/^\/+/,'');if(project.files[p])return toast('A file with that name already exists');project.files[p]={type:'text',content:''};await saveProject();openFile(p);}
+async function newFolder(){closeMenus();const dir=selDir();const name=await ask('New folder','Folder name',(dir?dir+'/':'')+'images');if(!name)return;const p=name.replace(/^\/+|\/+$/g,'');project.folders=[...new Set([...(project.folders||[]),p])];openFolders.add(p);selected=p+'/';await saveProject();renderTree();}
+function uploadToProject(){pickFile('*/*',addUploads,true);}
+async function addUploads(list){
+  const dir=selDir();let last=null;
+  for(const file of list){
+    if(/\.zip$/i.test(file.name)&&confirm(`“${file.name}” is a ZIP. Open it as a new project?\n(Cancel = add the .zip itself)`)){await importZip(file);return;}
+    if(/\.docx$/i.test(file.name)&&confirm(`Convert “${file.name}” from Word to a new LaTeX project?`)){await importDocx(file);return;}
+    const p=uniquePath((dir?dir+'/':'')+file.name);
+    project.files[p]=isText(file.name)?{type:'text',content:await file.text()}:{type:'bin',content:new Blob([await file.arrayBuffer()],{type:file.type||mimeOf(file.name)})};
+    last=p;
+  }
+  await saveProject();renderTree();toast(`${list.length} file(s) uploaded`);
+  if(last&&project.files[last].type==='text')openFile(last);
+}
+async function renameSel(){
+  closeMenus();if(!selected)return toast('Select a file or folder first');
+  if(selected.endsWith('/')){
+    const old=selected.slice(0,-1);const nn=await ask('Rename folder','New name',old);if(!nn||nn===old)return;
+    const map=p=>p.startsWith(old+'/')?nn+p.slice(old.length):p;
+    const nf={};for(const[p,f]of Object.entries(project.files))nf[map(p)]=f;project.files=nf;
+    project.folders=(project.folders||[]).map(f=>f===old?nn:map(f));project.main=map(project.main);
+    for(const k of Object.keys(docs)){const nk=map(k);if(nk!==k){docs[nk]=docs[k];delete docs[k];}}
+    tabs=tabs.map(map);if(current)current=map(current);selected=nn+'/';
+  }else{
+    const old=selected;const nn=await ask('Rename file','New name',old);if(!nn||nn===old)return;
+    if(project.files[nn])return toast('That name is already used');
+    project.files[nn]=project.files[old];delete project.files[old];
+    if(docs[old]){docs[nn]=docs[old];delete docs[old];}
+    if(project.main===old)project.main=nn;if(current===old)current=nn;tabs=tabs.map(t=>t===old?nn:t);selected=nn;
+  }
+  await saveProject();renderTree();renderTabs();
+}
+async function deleteSel(){
+  closeMenus();if(!selected)return toast('Select a file or folder first');
+  if(selected.endsWith('/')){const d=selected.slice(0,-1);if(!confirm(`Delete folder “${d}” and everything in it?`))return;
+    for(const p of Object.keys(project.files))if(p.startsWith(d+'/')){delete project.files[p];delete docs[p];}
+    project.folders=(project.folders||[]).filter(f=>f!==d&&!f.startsWith(d+'/'));}
+  else{if(!confirm(selected===project.main?`“${selected}” is the main document. Delete it?`:`Delete “${selected}”?`))return;delete project.files[selected];delete docs[selected];}
+  selected=null;tabs=tabs.filter(t=>project.files[t]);
+  if(!project.files[project.main])project.main=Object.keys(project.files).find(p=>/\.tex$/i.test(p))||'';
+  await saveProject();renderTree();
+  if(!project.files[current]){current=null;const f=tabs[0]||project.main||Object.keys(project.files)[0];if(f)openFile(f);else{cm.swapDoc(CodeMirror.Doc('','stex'));renderTabs();}}else renderTabs();
+}
+
+// ---------- outline ----------
+let outlineT,curSecT,outlineItems=[];
+function renderOutline(){
+  const o=$('outline');outlineItems=[];
+  if(!canEdit()){o.innerHTML='<div class="olnone">No outline for this file</div>';return;}
+  const lv={part:0,chapter:0,section:1,subsection:2,subsubsection:3,paragraph:4};let h='';
+  cm.getValue().split('\n').forEach((l,i)=>{const m=l.match(/^\s*\\(part|chapter|section|subsection|subsubsection|paragraph)\*?(?:\[[^\]]*\])?\{([^}]*)/);
+    if(m){outlineItems.push(i);h+=`<div class="ol" data-l="${i}" style="padding-left:${8+lv[m[1]]*14}px">${esc(m[2].replace(/\\[a-zA-Z]+\{?|[{}]/g,'')||'(untitled)')}</div>`;}});
+  o.innerHTML=h||'<div class="olnone">No sections in this file</div>';markCurrentSection();
+}
+function markCurrentSection(){const l=cm.getCursor().line;let cur=-1;for(const i of outlineItems)if(i<=l)cur=i;document.querySelectorAll('#outline .ol').forEach(e=>e.classList.toggle('cur',+e.dataset.l===cur));}
+$('outline').addEventListener('click',e=>{const it=e.target.closest('[data-l]');if(!it)return;const l=+it.dataset.l;cm.setCursor({line:l,ch:0});cm.scrollIntoView({line:l,ch:0},150);cm.focus();});
+function toggleTreeSec(){const t=$('tree');const h=t.style.display==='none';t.style.display=h?'':'none';$('treeCar').textContent=h?'▾':'▸';}
+function toggleOutSec(){const o=$('outline');const h=o.style.display==='none';o.style.display=h?'':'none';$('outCar').textContent=h?'▾':'▸';$('outSec').style.height=h?'':'34px';}
+
+// ---------- project search ----------
+function projectSearch(){
+  const q=$('ps').value,res=$('searchRes');if(!q){res.innerHTML='';return;}
+  let re;try{re=new RegExp($('psRe').checked?q:q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),$('psCase').checked?'g':'gi');}catch(e){res.innerHTML='<div class="olnone">Invalid regular expression</div>';return;}
+  let h='',n=0;
+  for(const[p,f]of Object.entries(project.files).sort()){if(f.type!=='text')continue;const lines=(p===current?cm.getValue():f.content).split('\n');let fh='';
+    lines.forEach((l,i)=>{re.lastIndex=0;const m=re.exec(l);if(m&&n<500){n++;const s=Math.max(0,m.index-30);fh+=`<div class="sr" data-f="${esc(p)}" data-l="${i}" data-c="${m.index}" data-e="${m.index+m[0].length}"><span class="ln">${i+1}</span>${esc(l.slice(s,m.index))}<b>${esc(m[0])}</b>${esc(l.slice(m.index+m[0].length,m.index+m[0].length+60))}</div>`;}});
+    if(fh)h+=`<div class="sr-f">${esc(p)}</div>`+fh;}
+  res.innerHTML=h||'<div class="olnone">No results</div>';
+}
+$('searchRes').addEventListener('click',e=>{const r=e.target.closest('.sr');if(!r)return;openFile(r.dataset.f);const l=+r.dataset.l;cm.setSelection({line:l,ch:+r.dataset.c},{line:l,ch:+r.dataset.e});cm.scrollIntoView({line:l,ch:0},150);});
+
+// ---------- rail / layout ----------
+function railTo(p){closeMenus();const was=$('r-'+p).classList.contains('on')&&!document.body.classList.contains('noside');
+  if(was){toggleSide();return;}
+  document.body.classList.remove('noside');
+  ['files','search','sym'].forEach(x=>$('r-'+x).classList.toggle('on',x===p));
+  $('filesPanel').style.display=p==='files'?'flex':'none';$('searchPanel').hidden=p!=='search';$('symPanel').hidden=p!=='sym';
+  if(p==='search')setTimeout(()=>$('ps').focus(),20);cm.refresh();}
+function toggleSide(){closeMenus();document.body.classList.toggle('noside');const hid=document.body.classList.contains('noside');document.querySelectorAll('.rbtn[id^=r-]').forEach(b=>{if(hid)b.dataset.was=b.classList.contains('on')?1:'';b.classList.toggle('on',!hid&&!!b.dataset.was);});if(!hid&&!document.querySelector('.rbtn.on'))$('r-files').classList.add('on');setTimeout(()=>{cm.refresh();refitPdf();},20);}
+function setLayout(l){closeMenus();document.body.classList.remove('l-editor','l-both','l-pdf');document.body.classList.add('l-'+l);LS.set('layout',l);setTimeout(()=>{cm.refresh();refitPdf();},30);}
+function makeResizer(id,getEl,side){const r=$(id);r.addEventListener('mousedown',e=>{e.preventDefault();const el=getEl(),sx=e.clientX,sw=el.getBoundingClientRect().width;r.classList.add('drag');document.body.style.userSelect='none';$('pdfFrame').style.pointerEvents='none';
+  const mv=ev=>{const w=Math.max(160,side==='left'?sw+(ev.clientX-sx):sw-(ev.clientX-sx));el.style.flex='none';el.style.width=w+'px';};
+  const up=()=>{r.classList.remove('drag');document.body.style.userSelect='';$('pdfFrame').style.pointerEvents='';removeEventListener('mousemove',mv);removeEventListener('mouseup',up);cm.refresh();refitPdf();};
+  addEventListener('mousemove',mv);addEventListener('mouseup',up);});}
+makeResizer('res1',()=>$('side'),'left');makeResizer('res2',()=>$('pdfCol'),'right');
+$('hres').addEventListener('mousedown',e=>{e.preventDefault();const o=$('outSec'),sy=e.clientY,sh=o.getBoundingClientRect().height;
+  const mv=ev=>{o.style.height=Math.max(34,Math.min($('side').clientHeight-100,sh-(ev.clientY-sy)))+'px';};const up=()=>{removeEventListener('mousemove',mv);removeEventListener('mouseup',up);};addEventListener('mousemove',mv);addEventListener('mouseup',up);});
+
+// ---------- project lifecycle ----------
+async function renameProject(){closeMenus();const n=await ask('Rename project','Project name',project.name);if(!n)return;project.name=n;await saveProject();$('projTitle').textContent=n;document.title=n+' – ScholEditor';}
+async function loadProject(p){
+  project=p;current=null;selected=null;tabs=[];for(const k in docs)delete docs[k];
+  for(const u of Object.values(imgUrls))URL.revokeObjectURL(u);imgUrls={};
+  LS.set('lastProject',p.id);
+  $('dash').hidden=true;$('ide').hidden=false;
+  $('projTitle').textContent=p.name;document.title=p.name+' – ScholEditor';
+  if(location.hash!=='#/project/'+p.id)history.replaceState(null,'','#/project/'+p.id);
+  renderTree();resetPdf();applySettings();
+  const last=LS.get('lastFile_'+p.id,null);
+  const first=(last&&p.files[last]&&last)||p.main||Object.keys(p.files).find(f=>p.files[f].type==='text')||Object.keys(p.files)[0];
+  if(first)openFile(first);else{cm.swapDoc(CodeMirror.Doc('','stex'));renderTabs();}
+  setTimeout(()=>cm.refresh(),30);
+}
+async function openProjectId(id){const p=await store.get(id);if(!p||p.trashed){toast('Project not found');goDash();return;}await loadProject(p);}
+async function createProject(name,files,main){
+  const p={id:uid(),name,files,folders:[],main:main||detectMain(files),updated:Date.now(),tags:[]};
+  await store.put(p);closeM('mNew');closeMenus();location.hash='#/project/'+p.id;await loadProject(p);return p;
+}
+function detectMain(files){
+  const tex=Object.keys(files).filter(p=>/\.tex$/i.test(p)&&files[p].type==='text');
+  const wd=tex.filter(p=>/\\documentclass/.test(files[p].content)&&/\\begin\{document\}/.test(files[p].content));
+  for(const n of['main.tex','paper.tex','thesis.tex','report.tex','document.tex','cv.tex']){const h=wd.find(p=>p.toLowerCase().endsWith(n));if(h)return h;}
+  return wd.sort((a,b)=>a.split('/').length-b.split('/').length)[0]||tex[0]||'';
+}
+async function copyProject(id,open){closeMenus();if(project&&id===project.id)await saveProject();const p=await store.get(id);if(!p)return;const c={...p,id:uid(),name:p.name+' (Copy)',updated:Date.now(),files:{...p.files},trashed:false,archived:false};await store.put(c);
+  if(open){location.hash='#/project/'+c.id;await loadProject(c);toast('Copy created');}else{allProjects=await store.all();renderDash();}}
+async function newFromTemplate(key){
+  closeMenus();const t=TEMPLATES[key];const files={};
+  for(const[p,c]of Object.entries(t.files))files[p]=typeof c==='string'?{type:'text',content:c.replace(/^\n/,'')}:{type:'bin',content:b64ToBlob(c.b64,c.mime)};
+  await createProject(t.name,files,'main.tex');toast(`Created “${t.name}”. Press Recompile to see the PDF.`);
+}
+
+// ============================================================
+//  ZIP
+// ============================================================
+async function importZip(file){
+  closeMenus();busy(true,'Opening ZIP…');
+  try{
+    const zip=await JSZip.loadAsync(file);
+    const entries=Object.values(zip.files).filter(e=>!e.dir&&!/(^|\/)(__MACOSX|\.DS_Store|Thumbs\.db)/.test(e.name));
+    if(!entries.length)throw new Error('The ZIP is empty');
+    const tops=new Set(entries.map(e=>e.name.split('/')[0]));
+    const strip=tops.size===1&&entries.every(e=>e.name.includes('/'))?[...tops][0]+'/':'';
+    const files={};
+    for(const e of entries){const p=e.name.slice(strip.length);if(!p)continue;
+      files[p]=isText(p)?{type:'text',content:await e.async('string')}:{type:'bin',content:new Blob([await e.async('uint8array')],{type:mimeOf(p)})};}
+    const main=detectMain(files);busy(false);
+    await createProject(file.name.replace(/\.zip$/i,''),files,main);
+    toast(main?`Imported ${Object.keys(files).length} files · main document: ${main}`:'Imported – no main .tex file found',4200);
+  }catch(e){busy(false);info('Could not open ZIP',esc(e.message));}
+}
+async function zipOf(p){const zip=new JSZip();for(const[k,f]of Object.entries(p.files))zip.file(k,f.content);for(const d of p.folders||[])zip.folder(d);return zip.generateAsync({type:'blob'});}
+async function downloadZip(){closeMenus();if(current&&canEdit())project.files[current].content=cm.getValue();saveAs(await zipOf(project),safeName(project.name)+'.zip');}
+async function downloadZipId(id){const p=await store.get(id);if(p)saveAs(await zipOf(p),safeName(p.name)+'.zip');}
+
+// ============================================================
+//  COMPILE (real TeX Live)
+// ============================================================
+let compiling=false,pdfBlob=null,pdfName='output.pdf';
+function setCompiling(on){$('recomp').classList.toggle('busy',on);$('recLbl').textContent=on?'Compiling…':'Recompile';}
+function resetPdf(){closeMenus();pdfBlob=null;if(pdfDoc){pdfDoc.destroy();pdfDoc=null;}$('pdfPages').innerHTML='';$('pdfViewer').hidden=true;$('pdfFrame').style.display='none';$('pdfFrame').removeAttribute('src');$('pdfEmpty').style.display='flex';$('logs').classList.remove('on');lastLog='';lastEntries=[];updateBadge();clearMarks();$('pdfStatus').textContent='';$('pageTot').textContent='/ 1';$('pageIn').value=1;}
+async function compile(isAuto){
+  closeMenus();if(!project)return;
+  if(!project.main||!project.files[project.main])return info('No main document','Choose a main .tex file in <b>Settings → Main document</b>, or use ⋮ → <b>Set as main document</b> in the file tree.');
+  if(compiling)return;
+  compiling=true;setCompiling(true);
+  if(canEdit())project.files[current].content=cm.getValue();
+  saveProject();
+  const t0=performance.now();$('pdfStatus').textContent='';
+  try{
+    if(settings.server!=='texlive'){
+      try{await compileYtotech();$('pdfStatus').textContent=`${((performance.now()-t0)/1000).toFixed(1)} s`;return;}
+      catch(e){if(e.kind==='latex'){$('pdfStatus').textContent='Compile failed – see logs';return;}if(settings.server==='ytotech')throw e;console.warn('Falling back to TeXLive.net',e);}
+    }
+    await compileTexliveNet();$('pdfStatus').textContent=`${((performance.now()-t0)/1000).toFixed(1)} s · TeXLive.net`;
+  }catch(e){$('pdfStatus').textContent='Server unreachable';if(!isAuto)info('Could not reach the compile server',`<p>${esc(e.message||e)}</p><p>LaTeX is compiled by a free TeX Live server on the internet, so you need a connection. Try again, or change <b>Settings → Compile server</b>.</p>`);}
+  finally{compiling=false;setCompiling(false);}
+}
+async function compileYtotech(){
+  const resources=[];
+  for(const[p,f]of Object.entries(project.files)){if(f.type==='text')resources.push(p===project.main?{main:true,path:p,content:f.content}:{path:p,content:f.content});else resources.push({path:p,file:await blobToB64(f.content)});}
+  let res;
+  try{res=await fetch('https://latex.ytotech.com/builds/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({compiler:settings.compiler,resources})});}
+  catch(e){const er=new Error('Network error: '+e.message);er.kind='net';throw er;}
+  const ct=res.headers.get('content-type')||'';
+  if(res.ok&&ct.includes('pdf')){const b=await res.blob();lastLog='';lastEntries=[];updateBadge();clearMarks();await showPdf(b);return;}
+  let j=null,txt='';try{txt=await res.text();j=JSON.parse(txt);}catch(e){}
+  if(j&&(j.logs||j.error)){
+    lastLog=j.logs||'';lastEntries=parseLog(lastLog);
+    if(!lastEntries.some(e=>e.level==='error'))lastEntries.unshift({level:'error',msg:(j.error||'Compilation failed').replace(/_/g,' ').toLowerCase().replace(/^./,c=>c.toUpperCase()),detail:j.message||'',file:'',line:0});
+    updateBadge();renderLogs();$('logs').classList.add('on');markErrorsFor(current);
+    const er=new Error('LaTeX error');er.kind='latex';throw er;}
+  const er=new Error(`Server responded ${res.status}`);er.kind=res.status>=500||res.status===429||res.status===0?'net':'latex';
+  if(er.kind==='latex'){lastLog=txt;lastEntries=[{level:'error',msg:'Compilation failed',detail:txt.slice(0,600),file:'',line:0}];updateBadge();renderLogs();$('logs').classList.add('on');}
+  throw er;
+}
+async function compileTexliveNet(){
+  const bins=Object.entries(project.files).filter(([,f])=>f.type!=='text').map(([p])=>p);
+  const fd=new FormData();
+  fd.append('filecontents[]',project.files[project.main].content);fd.append('filename[]','document.tex');
+  for(const[p,f]of Object.entries(project.files))if(f.type==='text'&&p!==project.main){fd.append('filecontents[]',f.content);fd.append('filename[]',p);}
+  fd.append('engine',settings.compiler);fd.append('return','pdf');
+  const note=bins.length?[{level:'warn',msg:`TeXLive.net can’t receive images or binary files (${bins.length} skipped)`,detail:bins.join(', ')+'\nUse Settings → Compile server → Auto to include them.',file:'',line:0}]:[];
+  try{
+    const r=await fetch('https://texlive.net/cgi-bin/latexcgi',{method:'POST',body:fd});
+    const ct=r.headers.get('content-type')||'';const b=await r.blob();
+    if(ct.includes('pdf')){lastLog='';lastEntries=note;updateBadge();await showPdf(b);return;}
+    lastLog=await b.text();lastEntries=parseLog(lastLog).concat(note);if(!lastEntries.some(e=>e.level==='error'))lastEntries.unshift({level:'error',msg:'Compilation failed',detail:'',file:'',line:0});
+    updateBadge();renderLogs();$('logs').classList.add('on');markErrorsFor(current);return;
+  }catch(e){/* CORS blocked → submit as a form into the iframe */}
+  const form=document.createElement('form');form.method='POST';form.action='https://texlive.net/cgi-bin/latexcgi';form.enctype='multipart/form-data';form.target='pdfFrame';form.style.display='none';
+  const add=(n,v)=>{const t=document.createElement('textarea');t.name=n;t.value=v;form.appendChild(t);};
+  for(const[k,v]of fd.entries())add(k,v);
+  document.body.appendChild(form);
+  pdfBlob=null;$('pdfEmpty').style.display='none';$('pdfViewer').hidden=true;$('pdfFrame').style.display='block';$('logs').classList.remove('on');
+  form.submit();setTimeout(()=>form.remove(),1000);
+  lastLog='';lastEntries=note.length?note:[{level:'info',msg:'Compiled with TeXLive.net',detail:'Errors (if any) are shown inside the PDF pane by this server.',file:'',line:0}];updateBadge();
+}
+
+// ---------- PDF viewer (pdf.js) ----------
+if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+let pdfDoc=null,pdfZoom=LS.get('zoom','fit'),curScale=1,curPage=1,drawToken=0,pdfDark=LS.get('pdfDark',false);
+$('pdfViewer').classList.toggle('dark',pdfDark);
+async function showPdf(blob){
+  pdfBlob=blob;pdfName=safeName((project.main.split('/').pop()||'output').replace(/\.tex$/i,''))+'.pdf';
+  $('pdfEmpty').style.display='none';$('pdfFrame').style.display='none';$('logs').classList.remove('on');
+  if(!window.pdfjsLib){const f=$('pdfFrame');f.style.display='block';f.src=URL.createObjectURL(blob)+'#view=FitH';return;}
+  const v=$('pdfViewer');const keepTop=v.hidden?0:v.scrollTop,keepH=v.hidden?1:v.scrollHeight;
+  v.hidden=false;
+  const doc=await pdfjsLib.getDocument({data:new Uint8Array(await blob.arrayBuffer())}).promise;
+  if(pdfDoc)pdfDoc.destroy();pdfDoc=doc;
+  await drawPages();
+  if(keepTop)v.scrollTop=keepTop/keepH*v.scrollHeight;
+  updatePageInfo();
+}
+async function drawPages(){
+  if(!pdfDoc)return;const token=++drawToken;const v=$('pdfViewer');
+  const availW=Math.max(200,v.clientWidth-30),availH=Math.max(200,v.clientHeight-30);
+  const dpr=Math.min(window.devicePixelRatio||1,2.5);const made=[];
+  for(let i=1;i<=pdfDoc.numPages;i++){
+    const page=await pdfDoc.getPage(i);if(token!==drawToken)return;
+    const vp1=page.getViewport({scale:1});
+    const scale=pdfZoom==='fit'?availW/vp1.width:pdfZoom==='page'?Math.min(availW/vp1.width,availH/vp1.height):+pdfZoom;
+    if(i===1)curScale=scale;
+    const vp=page.getViewport({scale});const c=document.createElement('canvas');
+    c.width=Math.floor(vp.width*dpr);c.height=Math.floor(vp.height*dpr);c.style.width=Math.floor(vp.width)+'px';c.style.height=Math.floor(vp.height)+'px';c.className='pdfpage';c.dataset.page=i;
+    await page.render({canvasContext:c.getContext('2d'),viewport:vp,transform:dpr!==1?[dpr,0,0,dpr,0,0]:null}).promise;
+    if(token!==drawToken)return;made.push(c);
+    if(i===1&&!$('pdfPages').children.length){$('pdfPages').appendChild(c);}
+  }
+  const pg=$('pdfPages');pg.innerHTML='';made.forEach(c=>pg.appendChild(c));
+  $('pageTot').textContent='/ '+pdfDoc.numPages;updateZoomLabel();updatePageInfo();
+}
+function updateZoomLabel(){const s=$('zoomSel');if(pdfZoom==='fit'||pdfZoom==='page'){s.value=pdfZoom;$('zoomCustom').textContent=Math.round(curScale*100)+'%';}else{const o=[...s.options].find(o=>o.value===String(pdfZoom));if(o)s.value=o.value;else{$('zoomCustom').textContent=Math.round(curScale*100)+'%';s.value='custom';}}}
+function setZoom(z){closeMenus();if(z==='custom')return;pdfZoom=z;LS.set('zoom',z);drawPages();}
+function zoomBy(d){pdfZoom=String(Math.max(0.25,Math.min(4,Math.round((curScale+d)*100)/100)));LS.set('zoom',pdfZoom);drawPages();}
+let refitT;function refitPdf(){clearTimeout(refitT);refitT=setTimeout(()=>{if(pdfDoc&&(pdfZoom==='fit'||pdfZoom==='page'))drawPages();},150);}
+addEventListener('resize',()=>{refitPdf();});
+function updatePageInfo(){const v=$('pdfViewer');const cs=[...$('pdfPages').children];if(!cs.length)return;const mid=v.scrollTop+v.clientHeight*0.35;let p=1;for(const c of cs)if(c.offsetTop<=mid)p=+c.dataset.page;curPage=p;$('pageIn').value=p;}
+$('pdfViewer').addEventListener('scroll',()=>updatePageInfo());
+function gotoPage(n){if(!pdfDoc)return;n=Math.max(1,Math.min(pdfDoc.numPages,n|0));const c=$('pdfPages').querySelector(`[data-page="${n}"]`);if(c)$('pdfViewer').scrollTop=c.offsetTop-12;curPage=n;$('pageIn').value=n;}
+function togglePdfDark(){closeMenus();pdfDark=!pdfDark;LS.set('pdfDark',pdfDark);$('pdfViewer').classList.toggle('dark',pdfDark);}
+$('pdfViewer').addEventListener('wheel',e=>{if(e.ctrlKey&&pdfDoc){e.preventDefault();zoomBy(e.deltaY<0?0.1:-0.1);}},{passive:false});
+function downloadPdf(){closeMenus();if(pdfBlob)return saveAs(pdfBlob,pdfName);if($('pdfFrame').style.display==='block')return info('Download PDF','This PDF was produced by TeXLive.net – use the download button inside the PDF pane.');toast('Recompile first to create the PDF');}
+
+// ---------- logs ----------
+function parseLog(log){
+  const out=[];const L=log.split(/\r?\n/);const stack=[];const fre=/\((\.?\/?[^\s()]+\.(?:tex|sty|cls|bbl|aux))/g;
+  const curTex=()=>{const t=stack.filter(f=>/\.tex$/i.test(f)&&(project.files[f]||f==='document.tex'));const f=t.pop();return!f||f==='document.tex'?project.main:f;};
+  for(let i=0;i<L.length;i++){const l=L[i];for(const m of l.matchAll(fre))stack.push(m[1].replace(/^\.\//,''));
+    if(l.startsWith('! ')){let line=0;const ctx=[];for(let k=i+1;k<Math.min(L.length,i+12);k++){const m=L[k].match(/^l\.(\d+)\s?(.*)/);ctx.push(L[k]);if(m){line=+m[1];break;}}out.push({level:'error',msg:l.slice(2),detail:ctx.join('\n'),file:curTex(),line});continue;}
+    let m;
+    if((m=l.match(/(?:^|[\s)])(?:LaTeX|Package (\S+)) Warning: (.*)/))){let msg=m[2];let k=i+1;while(k<L.length&&L[k].trim()&&!/^(\(|LaTeX|Package|!)/.test(L[k])&&k<i+5){msg+=' '+L[k].trim();k++;}const ln=msg.match(/on input line (\d+)/);out.push({level:'warn',msg:(m[1]?m[1]+': ':'')+msg,detail:'',file:curTex(),line:ln?+ln[1]:0});}
+    else if((m=l.match(/^(Overfull|Underfull) \\[hv]box .*?(?:at lines? (\d+))?/)))out.push({level:'info',msg:l.trim(),detail:'',file:curTex(),line:m[2]?+m[2]:0});
+  }
+  return out;
+}
+function updateBadge(){const b=$('logBadge');const ne=lastEntries.filter(e=>e.level==='error').length,nw=lastEntries.filter(e=>e.level==='warn').length;b.style.display=ne||nw?'inline':'none';b.textContent=ne||nw;b.classList.toggle('warn',!ne&&!!nw);}
+function renderLogs(){
+  const order={error:0,warn:1,info:2};const ents=[...lastEntries].sort((a,b)=>order[a.level]-order[b.level]);
+  let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><b>Logs</b><button class="obtn" onclick="toggleLogs()">Back to PDF</button></div>`;
+  if(!ents.length)h+='<div class="lg i"><div class="t">No errors or warnings 🎉</div></div>';
+  ents.forEach((e,i)=>{h+=`<div class="lg ${e.level==='warn'?'w':e.level==='info'?'i':''}" data-i="${i}"><div class="t">${e.level==='error'?'⛔':e.level==='warn'?'⚠️':'ℹ️'} ${esc(e.msg)}</div><div class="s">${e.file?esc(e.file):''}${e.line?', line '+e.line:''}</div>${e.detail?`<pre>${esc(e.detail)}</pre>`:''}</div>`;});
+  if(lastLog)h+=`<details style="margin-top:10px"><summary style="cursor:pointer;font-size:13px">Raw log</summary><pre id="rawLog">${esc(lastLog)}</pre></details>`;
+  $('logs').innerHTML=h;
+  $('logs').querySelectorAll('.lg[data-i]').forEach(el=>el.onclick=()=>{const e=ents[+el.dataset.i];if(e.file&&project.files[e.file]){if(document.body.classList.contains('l-pdf'))setLayout('both');openFile(e.file);if(e.line){cm.setCursor({line:e.line-1,ch:0});cm.scrollIntoView({line:e.line-1,ch:0},150);cm.focus();}}});
+}
+function toggleLogs(){const lg=$('logs');if(!lg.classList.contains('on'))renderLogs();lg.classList.toggle('on');}
+let marks=[];
+function clearMarks(){marks.forEach(m=>cm.removeLineClass(m.h,'background',m.c));marks=[];}
+function markErrorsFor(path){clearMarks();for(const e of lastEntries)if(e.file===path&&e.line&&e.level!=='info'&&e.line<=cm.lineCount()){const c=e.level==='error'?'err-line':'warn-line';const h=cm.addLineClass(e.line-1,'background',c);if(h)marks.push({h,c});}}
+
+// ============================================================
+//  WORD (.docx) – Pandoc in WebAssembly
+// ============================================================
+let pandocP=null;
+const WASM_URLS=['./pandoc.wasm','https://cdn.jsdelivr.net/npm/pandoc-wasm@1.1.0/src/pandoc.wasm','https://unpkg.com/pandoc-wasm@1.1.0/src/pandoc.wasm'];
+async function fetchWithProgress(url){const r=await fetch(url);if(!r.ok)throw new Error(url+' → '+r.status);const total=+r.headers.get('content-length')||58580800;if(!r.body||!r.body.getReader)return r.arrayBuffer();
+  const rd=r.body.getReader();const ch=[];let got=0;for(;;){const{done,value}=await rd.read();if(done)break;ch.push(value);got+=value.length;setBusyPct(Math.min(1,got/total));$('busySub').textContent=`${(got/1048576).toFixed(1)} / ${(total/1048576).toFixed(0)} MB – downloaded once, then cached`;}
+  const u=new Uint8Array(got);let o=0;for(const c of ch){u.set(c,o);o+=c.length;}return u.buffer;}
+function getPandoc(){
+  if(pandocP)return pandocP;
+  pandocP=(async()=>{for(let i=0;i<50&&!window.createPandocInstance;i++)await new Promise(r=>setTimeout(r,100));
+    if(!window.createPandocInstance)throw new Error('Converter module failed to load');
+    let buf=null,lastErr;busy(true,'Loading the Word converter (Pandoc)…');setBusyPct(0);
+    for(const u of WASM_URLS){try{buf=await fetchWithProgress(u);if(buf.byteLength>1e6)break;buf=null;}catch(e){lastErr=e;}}
+    if(!buf)throw new Error('Could not download pandoc.wasm ('+(lastErr&&lastErr.message)+')');
+    $('busyMsg').textContent='Starting the converter…';setBusyPct(null);$('busySub').textContent='';await new Promise(r=>setTimeout(r,30));
+    return window.createPandocInstance(buf);})();
+  pandocP.catch(()=>{pandocP=null;});return pandocP;
+}
+async function exportDocx(){
+  closeMenus();if(!project.main)return info('No main document','Choose a main .tex file first.');
+  if(canEdit())project.files[current].content=cm.getValue();
+  try{const pd=await getPandoc();busy(true,'Converting LaTeX → Word…');await new Promise(r=>setTimeout(r,30));
+    const files={};for(const[p,f]of Object.entries(project.files))files[p]=f.content;
+    const bibs=Object.keys(project.files).filter(p=>/\.bib$/i.test(p));
+    const opts={from:'latex',to:'docx','input-files':[project.main],'output-file':'__out.docx','resource-path':['.',project.main.includes('/')?project.main.slice(0,project.main.lastIndexOf('/')):'.']};
+    if(bibs.length){opts.citeproc=true;opts.bibliography=bibs;}
+    const csl=Object.keys(project.files).find(p=>/\.csl$/i.test(p));if(csl)opts.csl=csl;
+    const ref=Object.keys(project.files).find(p=>/(^|\/)reference\.docx$/i.test(p));if(ref)opts['reference-doc']=ref;
+    const r=await pd.convert(opts,null,files);const out=r.files['__out.docx'];busy(false);
+    if(!out||!out.size)return info('Export failed',`<pre style="white-space:pre-wrap">${esc(r.stderr||'Unknown error')}</pre>`);
+    saveAs(new Blob([out],{type:mimeOf('x.docx')}),safeName(project.name)+'.docx');toast('Word file ready – equations are editable Word equations',4200);
+  }catch(e){busy(false);info('Export to Word failed',esc(e.message||e));}
+}
+async function importDocx(file){
+  closeMenus();
+  try{const pd=await getPandoc();busy(true,'Converting Word → LaTeX…');await new Promise(r=>setTimeout(r,30));
+    const r=await pd.convert({from:'docx',to:'latex',standalone:true,'extract-media':'media','input-files':['__in.docx']},null,{'__in.docx':file});busy(false);
+    if(!r.stdout)return info('Import failed',`<pre style="white-space:pre-wrap">${esc(r.stderr||'Unknown error')}</pre>`);
+    const files={'main.tex':{type:'text',content:r.stdout}};
+    for(const[p,b]of Object.entries(r.mediaFiles||{}))files[p]={type:'bin',content:b instanceof Blob?b:new Blob([b],{type:mimeOf(p)})};
+    await createProject(file.name.replace(/\.docx?$/i,''),files,'main.tex');toast('Word document converted to LaTeX. Press Recompile.',4200);
+  }catch(e){busy(false);info('Import from Word failed',esc(e.message||e));}
+}
+
+// ---------- Open in Overleaf (sends text files via Overleaf's public "open in" API) ----------
+function openInOverleaf(){
+  closeMenus();if(canEdit())project.files[current].content=cm.getValue();
+  const bins=Object.entries(project.files).filter(([,f])=>f.type!=='text').map(([p])=>p);
+  const form=document.createElement('form');form.method='POST';form.action='https://www.overleaf.com/docs';form.target='_blank';form.style.display='none';
+  const add=(n,v)=>{const t=document.createElement('textarea');t.name=n;t.value=v;form.appendChild(t);};
+  const order=[project.main,...Object.keys(project.files).filter(p=>p!==project.main)];
+  for(const p of order){const f=project.files[p];if(!f||f.type!=='text')continue;add('snip[]',f.content);add('snip_name[]',p);}
+  add('engine',settings.compiler==='pdflatex'?'pdflatex':settings.compiler);
+  document.body.appendChild(form);form.submit();setTimeout(()=>form.remove(),1000);
+  if(bins.length)info('Opened in Overleaf',`Text files were sent. Images and other binary files (${bins.length}) can’t be sent this way – upload them in Overleaf, or use <b>File → Download as source (.zip)</b> and Overleaf’s <i>Upload project</i>.`);
+}
+
+// ============================================================
+//  MISC
+// ============================================================
+function wordCount(){
+  closeMenus();if(canEdit())project.files[current].content=cm.getValue();
+  const seen=new Set();const expand=p=>{if(seen.has(p))return'';seen.add(p);const f=project.files[p]||project.files[p+'.tex'];if(!f||f.type!=='text')return'';return f.content.replace(/\\(?:input|include)\{([^}]+)\}/g,(m,n)=>expand(n.endsWith('.tex')?n:n+'.tex'));};
+  const s=expand(project.main);const body=(s.split('\\begin{document}')[1]||s).split('\\end{document}')[0];
+  let t=body.replace(/(^|[^\\])%.*$/gm,'$1');
+  const nMath=(t.match(/\$[^$]+\$|\\\(|\\\[|\\begin\{(equation|align|gather|multline)\*?\}/g)||[]).length;
+  t=t.replace(/\\begin\{(equation|align|gather|multline|figure|table|tabular)\*?\}[\s\S]*?\\end\{\1\*?\}/g,' ').replace(/\$\$[\s\S]*?\$\$|\$[^$]*\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)/g,' ');
+  const heads=(t.match(/\\(chapter|section|subsection|subsubsection)\*?\{/g)||[]).length;
+  t=t.replace(/\\(label|ref|eqref|cite\w*|includegraphics|bibliography\w*|usepackage|input|include|begin|end|vspace|hspace)(\[[^\]]*\])?\{[^}]*\}/g,' ').replace(/\\[a-zA-Z@]+\*?/g,' ').replace(/[{}\[\]~\\&]/g,' ');
+  const words=(t.match(/[A-Za-z\u00C0-\u024F\u0600-\u06FF0-9][\w\u00C0-\u024F\u0600-\u06FF'’-]*/g)||[]).length;
+  info('Word count',`<table class="kt"><tr><td>Words in text</td><td><b>${words}</b></td></tr><tr><td>Headers</td><td>${heads}</td></tr><tr><td>Math expressions</td><td>${nMath}</td></tr></table><p style="font-size:12.5px;color:var(--muted)">From <code>${esc(project.main)}</code> and the files it \\input / \\includes, excluding commands, math, figures and tables.</p>`);
+}
+function openHelp(){closeMenus();info('Keyboard shortcuts',`<table class="kt">
+<tr><td>Recompile</td><td><code>Ctrl/⌘ + S</code> · <code>Ctrl/⌘ + Enter</code></td></tr>
+<tr><td>Bold / Italic</td><td><code>Ctrl/⌘ + B</code> · <code>Ctrl/⌘ + I</code></td></tr>
+<tr><td>Comment lines</td><td><code>Ctrl/⌘ + /</code></td></tr>
+<tr><td>Autocomplete</td><td>type <code>\\</code> or <code>Ctrl + Space</code></td></tr>
+<tr><td>Find / Replace</td><td><code>Ctrl/⌘ + F</code> · <code>Ctrl + Shift + F</code></td></tr>
+<tr><td>Go to line</td><td><code>Ctrl + G</code></td></tr>
+<tr><td>Zoom PDF</td><td><code>Ctrl + mouse wheel</code></td></tr></table>
+<p style="font-size:13.5px"><b>Visual mode</b> shows headings, equations, citations and images rendered; click any of them to edit the source.</p>
+<p style="font-size:13.5px"><b>Where things live:</b> projects are stored in this browser. Use <b>File → Download as source (.zip)</b> for backups or to move to another device. PDFs are compiled by a free TeX Live server; Word conversion runs in your browser.</p>`);}
+function openCheat(){closeMenus();info('LaTeX quick reference',`<table class="kt">
+<tr><td>Section</td><td><code>\\section{Title}</code></td></tr><tr><td>Bold / italic</td><td><code>\\textbf{x}</code> · <code>\\textit{x}</code></td></tr>
+<tr><td>Inline / display math</td><td><code>$x^2$</code> · <code>\\[ x^2 \\]</code></td></tr><tr><td>Fraction / root</td><td><code>\\frac{a}{b}</code> · <code>\\sqrt{x}</code></td></tr>
+<tr><td>Sum / integral</td><td><code>\\sum_{i=1}^{n}</code> · <code>\\int_a^b f(x)\\,dx</code></td></tr><tr><td>Matrix</td><td><code>\\begin{pmatrix} a &amp; b \\\\ c &amp; d \\end{pmatrix}</code></td></tr>
+<tr><td>Label / reference</td><td><code>\\label{eq:1}</code> · <code>\\eqref{eq:1}</code></td></tr><tr><td>Citation</td><td><code>\\cite{key}</code> + <code>\\bibliography{refs}</code></td></tr>
+<tr><td>Image</td><td><code>\\includegraphics[width=\\linewidth]{file.png}</code></td></tr><tr><td>New page</td><td><code>\\newpage</code></td></tr></table>`);}
+function openAbout(){closeMenus();info('About ScholEditor','<p>An online LaTeX editor for research papers, reports, theses and CVs.</p><p>Built with CodeMirror (editor), pdf.js (PDF viewer), KaTeX (Visual mode), JSZip, Pandoc (Word conversion) and TeX Live compile servers (LaTeX-on-HTTP, TeXLive.net).</p>');}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeMenus();document.querySelectorAll('.mwrap.on').forEach(m=>{if(m.id==='mAsk')askDone(null);else m.classList.remove('on');});}
+  if((e.ctrlKey||e.metaKey)&&(e.key==='s'||e.key==='Enter')&&!$('ide').hidden&&!cm.hasFocus()){e.preventDefault();compile();}
+});
+
+// ============================================================
+//  TEMPLATES
+// ============================================================
+const SAMPLE_PNG={b64:'iVBORw0KGgoAAAANSUhEUgAAAWgAAADICAIAAABK7OzYAAAIrUlEQVR42u3dyW0kRxAFUN5kgO4yTCbJHhoxXrUIEBgQQzZZSy6xvA/eNGpmZ0S9il5Y9fK4kdfX14eI9MsLOEQEHCICDhEBh4iAAxwi4ACHiIBDRMAhIuAQEXCICDjAISLgEBFwiAg4RAQcIgIOcIgIOEQEHCKSBY5//v319rN4xX//99eXP2rZIapfB45lfDxrGg3UmQzVzw3HbDuO9I3u6ayG6id7j2O2HQc7QwN1IEP168Dxx/Qxr29m/HvJoobq14Rjhh3X+kD39FRD9bPC8Rj9Ocud8mudGnCofgs4Btpxv/a6p6caqp8SjiF2jKq67umphuonhuOyHQNfo3q5m1QN1e8Ix82hY2yxtU7PcUP1U8Jx2Y4ZldY9PdVQ/ZRwXLBjXo11T081VB8cWgccqt8DjlN2zK6u7umphuqnhOPdjoOlXdCdSh4WDtUHx+mhY80JwWmn57ih+inh+NGOlRXVPT3VUH1waB1wqH4POL6xY30tdU9PNVQ/JRyPJ++Sbqmi1okDh+qD4/TQsYt/p52e44bqp4Tj89CxsX5ap+e4ofpZ4fhtx174nXZ6jhuqnxKOj0PH9sppnc6br/r54Hi3Q+uAQ/XBcc6OIGXTPZ23XfXzwbH+3pFaBxyqnxuOt4LFgUP3tN1z1U8Jh6HDuGEx4DjNvKHDuGE94DhtvKHDuGFJ4LgCvKHDuGFV4DitexA4nHaab7LqJ4Mj1NChG8AhEeH4sjyGDmpYHjiuwGHoAIflgeNpYZ7VxlukHdSID4fqB4Xj2X8ydBg3LBIcV6oCDnBYJDhOl8TQQQ1LBceVeoADHJYKDnAIOMBxA47jxWAHNSwYHOAQcIDjEhynPh4P8hapj/Q776TqR4Hj1GMaOowblg2OK3AEGTo0BzhkDxzXCmDooIbFgwMc4LB4cMyHI4gdWgccsgGOO1tv6AiS97ecnv3U3jrVTwmHoSOsF0cQAQc4rsBx/8NwX+hI4cWXfNTYN1/o2APH/SZ22tlOxmVoamwLOPLB8fAW6T4yNj4OOPrCMWq7DR2L1ZjBEDvAsQEOQ0cWMv7YrjJ8gCMfHF6tLFBj6nYV4AMci+AYu9GGjrxqsAMc2+AwdExSY/FGpeYDHOBo3ToLjtsfr2Wf0Q5wTIdj0hazI/LLk1NbxA5wgIMaF7coHR/gyArH9g5L2jorD9FTW5TLDnBMhGPq5ho6Yr6pcWdz2AEOcMSFI/jmZLEDHCnhiGBHrtZZfDTev4pCcD7AMQWOBdtq6CipBjvAUepgyNs664/AUX8MHdwOcKSEw6uVsG8ZjP3rpLB29Pk76R9/xsCxbEMNHbXVYEdYKXLDYegIeLzN2JCwL1uyw3H/6pDgqAlHmQ2JaUeB7wEOuVbbADjWbyU7yqvBjtle3HxkcFRonY2H1rJP0+LYkegN8nlXcswKx942CtU6e4+rZZ+mxbEjxbvjsy+AcheOXZto6OijRsCXLTFHzpVXik4Mh6Fj+z4s3oQ4dsSBY9ddKbLCsX3oiHCbr4Z6BrEjTvV3XZPxJVffeLVi5grylkeEp79xH15eb+Rt71635m3LNv72vU//vWOaP/2Nm7Dl6X8mY9f+J544Og8dZvUIL1t2vTccofqz7h1rXC/8rB/xPlSq9+W3mGQUgSPCW6QNX94/on6TJftf98UnoxQcreygRgc7It+7+/0pp4ej1dDh60/R7Jh3SYGw1xYoBUeHL0H5znVAPmZcwSjFZdAqwNFk6DBuXDsC429IFjI+Ptk6cNQeOowbYe24f1+IRPeXqQbH3qFjzbvr0VoHH5c3JCMZ4Eh2OPmL8vh8XLtpbrqbb398mnXgqDp0GDeG2zF8P3/cltRegCPfEeWqeVP5GLW3z7Zl/WUywJHvMJv0kT41FvBxf58/bs6CK/dtr34pOIoNHeBYz8flPR/+gODoMnSMPa7cUiSCIDd/Km1UcThqDB3USC1Ivc35XP2acKQeOtzBLCMitbeoBRyP5HcnivynTdJzi8ARvXuowY4UT6omHEmHDrdoBwc4QtgBDseDjQJH5aGDGuxI9HQqw5Fo6Ih/4RYBRy841h+QZ1snxRWfBByN4EgxdFCDHemeSAs4Ig8dWS4VJ+DoBceWg/Pgjc7iqwGOtvv2/bMAx7bTTqIr00rDrfv+KbSAY9fQkVoNcIADHOHsoAY7Ui8eHBt2P9eF8AUcreFYf8R+uftZLtkADnCAI4od6e67Iw238ciywbGuBomuEAUOcIBjpx2/PwzPpQY42u7kwTV3hGO9HUlv8ycNN/PgglvDseZITn2nPwEHODYcz9SQRFt6fKl94VhwVP9+/JKtI+BoCsdUO5JeOB8c4ADHNjs+P2aK7qFG5409tUhwDLbj2R29wAEOcFSD45sDftSDxP9I39c3Ou/t2RWCY4wdR+4eGr91HOFtt/fs8sDx3fF/RJDj/x4c4ABHTTie8fERhTu3KQ/bPdTovMkXFgaOc3ZcJgMcAo76cBwX5GyFAnaPt0U77/O1VYHjNCL1TjvU6LzV15YEju6nHeOG6oPDace4oforFgOO1qcd44bqg8Npx7ih+ouWAQ6tI6oPDt1DDdWfvwBwaB1RfXCkap2N3eNtUdUHh9OOcUP1l/5qcHQ87Rg3VB8cTjvGDdVf/UvB0e60Y9xQfXDoHmqo/obfBQ6tI6oPDt1DDdWf/1vAEah7CvwKaVJ9cHQ57Rg3VB8cuocaqr/zkcGhdUT1waF7qKH686sPjuLdQw3Vn7FOcARtnSH1HvhQovrg6HLaoYbqT1okOMp2DzVUf94KwVGze6ih+lOXB44EL3dPNcG1/0tUHxx9u4caqr+m+uDI1D3fNMTBfyaqD46+DfTNj71SfXDIue6xS6oPDjnRQHZG9cEhIqEDDhEBh4iAQ0TAISLgAIcIOMAhIuAQEXCICDhEBBwiAg5wiAg4RAQcIgIOEQGHiIADHCICDhEBh4iszP+wUJxEwGVbEgAAAABJRU5ErkJggg==', mime:'image/png'};
+const REFS_BIB=String.raw`
+@article{einstein1905,
+  author  = {Einstein, Albert},
+  title   = {Zur Elektrodynamik bewegter K{\"o}rper},
+  journal = {Annalen der Physik},
+  volume  = {322},
+  number  = {10},
+  pages   = {891--921},
+  year    = {1905},
+  doi     = {10.1002/andp.19053221004}
+}
+
+@book{knuth1984,
+  author    = {Knuth, Donald E.},
+  title     = {The {\TeX}book},
+  publisher = {Addison-Wesley},
+  address   = {Reading, MA},
+  year      = {1984}
+}
+
+@inproceedings{vaswani2017,
+  author    = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N. and Kaiser, {\L}ukasz and Polosukhin, Illia},
+  title     = {Attention Is All You Need},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {30},
+  year      = {2017}
+}
+`;
+const TEMPLATES={
+article:{name:'Research Paper', icon:'🔬', desc:'Article with abstract, math, figure, table, BibTeX', files:{
+'main.tex':String.raw`
+\documentclass[11pt,a4paper]{article}
+
+% ---------- Packages ----------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+
+\title{A Study of Something Important}
+\author{First Author\thanks{Department of Physics, University Name. Email: \texttt{author@university.edu}} \and Second Author}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This paper investigates \dots. We propose a method that \dots and show that it improves \dots by 12\%.
+Our results suggest that \dots.
+\end{abstract}
+
+\noindent\textbf{Keywords:} keyword one; keyword two; keyword three
+
+\section{Introduction}
+\label{sec:intro}
+Special relativity \cite{einstein1905} changed how we think about space and time.
+Modern sequence models rely on attention mechanisms \cite{vaswani2017}.
+This document was typeset with \LaTeX{} \cite{knuth1984}.
+
+\section{Methodology}
+\label{sec:method}
+The Fourier transform of a function $f$ is defined as
+\begin{equation}
+  \hat{f}(\xi) = \int_{-\infty}^{\infty} f(x)\, e^{-2\pi i x \xi}\, dx .
+  \label{eq:fourier}
+\end{equation}
+Equation~\eqref{eq:fourier} is invertible for well-behaved $f$.
+
+\begin{definition}
+A matrix $A \in \mathbb{R}^{n\times n}$ is \emph{symmetric} if $A = A^{\top}$.
+\end{definition}
+
+\begin{theorem}[Spectral theorem]
+Every real symmetric matrix $A$ can be written as $A = Q \Lambda Q^{\top}$, where
+\[
+  \Lambda = \begin{pmatrix}
+    \lambda_1 & & \\
+    & \ddots & \\
+    & & \lambda_n
+  \end{pmatrix}.
+\]
+\end{theorem}
+
+\begin{align}
+  \nabla \cdot \mathbf{E} &= \frac{\rho}{\varepsilon_0} \\
+  \nabla \times \mathbf{B} &= \mu_0 \mathbf{J} + \mu_0 \varepsilon_0 \frac{\partial \mathbf{E}}{\partial t}
+\end{align}
+
+\section{Results}
+\label{sec:results}
+Figure~\ref{fig:plot} shows the signal and Table~\ref{tab:results} summarises the accuracy.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.7\linewidth]{images/plot.png}
+  \caption{A sine wave (green) and a damped oscillation (blue).}
+  \label{fig:plot}
+\end{figure}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Accuracy of the compared methods.}
+  \label{tab:results}
+  \begin{tabular}{lcc}
+    \toprule
+    Method   & Accuracy (\%) & Time (ms) \\
+    \midrule
+    Baseline & 85.2 & 120 \\
+    Proposed & \textbf{92.7} & \textbf{98} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Conclusion}
+We presented \dots. Future work includes \dots.
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}
+`,
+'refs.bib':REFS_BIB, 'images/plot.png':SAMPLE_PNG }},
+
+ieee:{name:'IEEE Conference Paper', icon:'📰', desc:'Two-column IEEEtran format', files:{
+'main.tex':String.raw`
+\documentclass[conference]{IEEEtran}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{cite}
+
+\begin{document}
+
+\title{Paper Title for an IEEE Conference}
+
+\author{\IEEEauthorblockN{First Author}
+\IEEEauthorblockA{\textit{Dept. of Electrical Engineering} \\
+\textit{University Name}\\
+City, Country \\
+email@university.edu}
+\and
+\IEEEauthorblockN{Second Author}
+\IEEEauthorblockA{\textit{Dept. of Computer Science} \\
+\textit{University Name}\\
+City, Country \\
+email@university.edu}
+}
+
+\maketitle
+
+\begin{abstract}
+This paper presents \dots
+\end{abstract}
+
+\begin{IEEEkeywords}
+signal processing, optimization, deep learning
+\end{IEEEkeywords}
+
+\section{Introduction}
+Attention-based models \cite{vaswani2017} have become standard.
+
+\section{System Model}
+The received signal is
+\begin{equation}
+  y[n] = \sum_{k=0}^{L-1} h[k]\, x[n-k] + w[n],
+  \label{eq:model}
+\end{equation}
+where $w[n] \sim \mathcal{CN}(0, \sigma^2)$.
+
+\section{Results}
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{images/plot.png}
+  \caption{Simulated response.}
+  \label{fig:resp}
+\end{figure}
+
+Fig.~\ref{fig:resp} shows the response of the system in \eqref{eq:model}.
+
+\section{Conclusion}
+We have shown \dots
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+
+\end{document}
+`,
+'refs.bib':REFS_BIB, 'images/plot.png':SAMPLE_PNG }},
+
+thesis:{name:'Thesis / Dissertation', icon:'🎓', desc:'Report class, chapters in separate files', files:{
+'main.tex':String.raw`
+\documentclass[12pt,a4paper,oneside]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{setspace}
+\usepackage[margin=2.5cm, left=3cm]{geometry}
+\usepackage[hidelinks]{hyperref}
+
+\onehalfspacing
+\newtheorem{theorem}{Theorem}[chapter]
+
+\begin{document}
+
+% ---------- Title page ----------
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\LARGE\bfseries Title of the Thesis\par}
+  \vspace{1.5cm}
+  {\large A thesis submitted in partial fulfilment of the requirements\\ for the degree of\par}
+  \vspace{0.5cm}
+  {\Large\bfseries Doctor of Philosophy\par}
+  \vspace{2cm}
+  {\large by\\[0.3cm] \textbf{Your Full Name}\par}
+  \vfill
+  {\large Department of Mathematics\\ University Name\\ \today\par}
+\end{titlepage}
+
+\pagenumbering{roman}
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+Write your abstract here.
+
+\chapter*{Acknowledgements}
+I would like to thank \dots
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+\clearpage
+\pagenumbering{arabic}
+
+\input{chapters/introduction}
+\input{chapters/literature}
+\input{chapters/methodology}
+\input{chapters/conclusion}
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\appendix
+\chapter{Additional Proofs}
+Supplementary material goes here.
+
+\end{document}
+`,
+'chapters/introduction.tex':String.raw`
+\chapter{Introduction}
+\label{ch:intro}
+
+\section{Background}
+The study of \dots goes back to \cite{einstein1905}.
+
+\section{Problem Statement}
+We aim to solve
+\begin{equation}
+  \min_{x \in \mathbb{R}^n} \; f(x) = \frac{1}{2} x^{\top} A x - b^{\top} x .
+\end{equation}
+
+\section{Objectives}
+\begin{enumerate}
+  \item First objective.
+  \item Second objective.
+\end{enumerate}
+`,
+'chapters/literature.tex':String.raw`
+\chapter{Literature Review}
+\label{ch:lit}
+Previous work includes \cite{knuth1984, vaswani2017}.
+`,
+'chapters/methodology.tex':String.raw`
+\chapter{Methodology}
+\label{ch:method}
+
+\begin{theorem}
+Let $A$ be symmetric positive definite. Then $f$ has the unique minimiser $x^\star = A^{-1} b$.
+\end{theorem}
+\begin{proof}
+Setting $\nabla f(x) = Ax - b = 0$ gives the result.
+\end{proof}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.75\linewidth]{images/plot.png}
+  \caption{Example figure.}
+  \label{fig:example}
+\end{figure}
+`,
+'chapters/conclusion.tex':String.raw`
+\chapter{Conclusion}
+\label{ch:conc}
+Summary of contributions and future work.
+`,
+'refs.bib':REFS_BIB, 'images/plot.png':SAMPLE_PNG }},
+
+report:{name:'University Report', icon:'📋', desc:'Lab / course report with title page', files:{
+'main.tex':String.raw`
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Course Code -- Course Name}
+\rhead{Your Name}
+\cfoot{\thepage}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  {\large University Name\\ Faculty of Engineering\par}
+  \vspace{3cm}
+  {\Huge\bfseries Report Title\par}
+  \vspace{1cm}
+  {\Large Course: CODE 101 -- Course Name\par}
+  \vfill
+  \begin{tabular}{rl}
+    Student:    & Your Name (ID 123456) \\
+    Instructor: & Dr. Instructor Name \\
+    Date:       & \today
+  \end{tabular}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+The aim of this experiment is \dots
+
+\section{Theory}
+The mean and standard deviation of $n$ measurements are
+\begin{align}
+  \bar{x} &= \frac{1}{n}\sum_{i=1}^{n} x_i, &
+  s &= \sqrt{\frac{1}{n-1}\sum_{i=1}^{n} (x_i - \bar{x})^2}.
+\end{align}
+
+\section{Procedure}
+\begin{enumerate}
+  \item Calibrate the instrument.
+  \item Record the measurements.
+  \item Repeat five times.
+\end{enumerate}
+
+\section{Results}
+\begin{table}[htbp]
+  \centering
+  \caption{Measured values.}
+  \begin{tabular}{ccc}
+    \toprule
+    Trial & Voltage (V) & Current (mA) \\
+    \midrule
+    1 & 1.00 & 10.2 \\
+    2 & 2.00 & 20.1 \\
+    3 & 3.00 & 30.4 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Discussion}
+\section{Conclusion}
+
+\end{document}
+`}},
+
+math:{name:'Math Notes / Homework', icon:'∑', desc:'Theorems, proofs, align, matrices, cases', files:{
+'main.tex':String.raw`
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage[margin=2.2cm]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\theoremstyle{definition}
+\newtheorem{problem}{Problem}
+\newcommand{\R}{\mathbb{R}}
+\DeclareMathOperator{\tr}{tr}
+
+\title{Homework 1 -- Linear Algebra \& Analysis}
+\author{Your Name}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{problem}
+Compute the determinant of
+$A = \begin{bmatrix} 2 & -1 & 0 \\ -1 & 2 & -1 \\ 0 & -1 & 2 \end{bmatrix}$.
+\end{problem}
+\begin{proof}[Solution]
+Expanding along the first row,
+\begin{align*}
+  \det A &= 2\begin{vmatrix} 2 & -1 \\ -1 & 2 \end{vmatrix}
+          - (-1)\begin{vmatrix} -1 & -1 \\ 0 & 2 \end{vmatrix} \\
+         &= 2(3) + (-2) = 4. \qedhere
+\end{align*}
+\end{proof}
+
+\begin{problem}
+Evaluate $\displaystyle \int_{0}^{\infty} e^{-x^2}\,dx$.
+\end{problem}
+\begin{proof}[Solution]
+Let $I$ be the integral. Then
+\[
+  I^2 = \int_0^{\infty}\!\!\int_0^{\infty} e^{-(x^2+y^2)}\,dx\,dy
+      = \int_0^{\pi/2}\!\!\int_0^{\infty} e^{-r^2} r\,dr\,d\theta = \frac{\pi}{4},
+\]
+so $I = \frac{\sqrt{\pi}}{2}$.
+\end{proof}
+
+\begin{theorem}[Taylor]
+If $f \in C^{n+1}$, then
+$\displaystyle f(x) = \sum_{k=0}^{n} \frac{f^{(k)}(a)}{k!}(x-a)^k + R_n(x)$.
+\end{theorem}
+
+\[
+  |x| = \begin{cases}
+    x  & \text{if } x \ge 0, \\
+    -x & \text{if } x < 0,
+  \end{cases}
+  \qquad
+  \lim_{n\to\infty}\left(1+\frac{1}{n}\right)^{n} = e,
+  \qquad
+  \tr(AB) = \tr(BA).
+\]
+
+\end{document}
+`}},
+
+cv:{name:'Academic CV', icon:'👤', desc:'Clean one/two page academic résumé', files:{
+'main.tex':String.raw`
+\documentclass[10.5pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1.8cm]{geometry}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{accent}{HTML}{1F4E79}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\titleformat{\section}{\large\bfseries\color{accent}}{}{0pt}{}[\vspace{-0.6em}\textcolor{accent}{\rule{\linewidth}{0.6pt}}]
+\titlespacing*{\section}{0pt}{1.1em}{0.6em}
+\setlist[itemize]{leftmargin=1.2em, itemsep=1pt, topsep=2pt}
+\newcommand{\entry}[4]{\textbf{#1} \hfill #2\\ \textit{#3} \hfill {\small #4}\par\smallskip}
+
+\begin{document}
+
+\begin{center}
+  {\Huge\bfseries Your Full Name}\\[4pt]
+  PhD Candidate in Applied Mathematics\\[4pt]
+  \href{mailto:you@university.edu}{you@university.edu} \;|\; +00 000 000 0000 \;|\;
+  \href{https://orcid.org/0000-0000-0000-0000}{ORCID} \;|\; \href{https://scholar.google.com}{Google Scholar}
+\end{center}
+
+\section{Education}
+\entry{Ph.D. in Applied Mathematics}{2022 -- present}{University Name}{City, Country}
+Thesis: \emph{Title of the thesis}. Advisor: Prof.\ Name.
+\entry{M.Sc. in Mathematics}{2020 -- 2022}{University Name}{City, Country}
+\entry{B.Sc. in Mathematics}{2016 -- 2020}{University Name}{GPA 3.9/4.0}
+
+\section{Research Interests}
+Numerical analysis, partial differential equations, scientific machine learning.
+
+\section{Publications}
+\begin{enumerate}[leftmargin=1.6em]
+  \item \textbf{Your Name}, A. Coauthor. Title of the paper. \emph{Journal Name}, 12(3):45--67, 2024.
+  \item \textbf{Your Name}. Title of a conference paper. In \emph{Proc.\ Conference}, 2023.
+\end{enumerate}
+
+\section{Research Experience}
+\entry{Graduate Research Assistant}{2022 -- present}{Lab Name, University Name}{}
+\begin{itemize}
+  \item Developed a finite-element solver for \dots
+  \item Co-authored 3 peer-reviewed papers.
+\end{itemize}
+
+\section{Teaching}
+\entry{Teaching Assistant -- Calculus II}{2021 -- 2023}{University Name}{}
+
+\section{Awards}
+\begin{itemize}
+  \item Best Student Paper Award, Conference Name, 2023
+  \item Graduate Fellowship, University Name, 2022
+\end{itemize}
+
+\section{Skills}
+\textbf{Programming:} Python, MATLAB, C++, Julia \quad
+\textbf{Tools:} \LaTeX, Git, PyTorch \quad
+\textbf{Languages:} Arabic (native), English (fluent)
+
+\end{document}
+`}},
+
+beamer:{name:'Presentation (Beamer)', icon:'📊', desc:'Slides for talks and defences', files:{
+'main.tex':String.raw`
+\documentclass{beamer}
+\usetheme{Madrid}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+
+\title{Presentation Title}
+\subtitle{Conference or Seminar Name}
+\author{Your Name}
+\institute{University Name}
+\date{\today}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+\section{Motivation}
+\begin{frame}{Motivation}
+  \begin{itemize}
+    \item<1-> First point
+    \item<2-> Second point
+    \item<3-> Third point
+  \end{itemize}
+\end{frame}
+
+\section{Method}
+\begin{frame}{Key Equation}
+  \begin{block}{Schr\"odinger equation}
+    \[
+      i\hbar \frac{\partial}{\partial t}\Psi(\mathbf{r},t) = \hat{H}\Psi(\mathbf{r},t)
+    \]
+  \end{block}
+\end{frame}
+
+\section{Results}
+\begin{frame}{Results}
+  \centering
+  \includegraphics[width=0.8\linewidth]{images/plot.png}
+\end{frame}
+
+\begin{frame}
+  \centering \Huge Thank you!
+\end{frame}
+
+\end{document}
+`,
+'images/plot.png':SAMPLE_PNG }},
+
+letter:{name:'Cover Letter', icon:'✉️', desc:'Formal letter for applications', files:{
+'main.tex':String.raw`
+\documentclass[11pt,a4paper]{letter}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[hidelinks]{hyperref}
+
+\signature{Your Full Name}
+\address{Your Name \\ Street Address \\ City, Country \\ you@university.edu}
+
+\begin{document}
+\begin{letter}{Prof.\ Recipient Name \\ Department of Physics \\ University Name \\ City, Country}
+
+\opening{Dear Professor Name,}
+
+I am writing to apply for the PhD position in \dots advertised on \dots.
+During my master's studies at \dots, I worked on \dots, which resulted in a publication in \dots.
+
+Your group's recent work on \dots aligns closely with my interests in \dots.
+
+I have enclosed my CV and transcripts. Thank you for your time and consideration.
+
+\closing{Sincerely,}
+
+\encl{CV, Transcripts}
+
+\end{letter}
+\end{document}
+`}},
+
+blank:{name:'Blank Project', icon:'📄', desc:'Minimal article to start from scratch', files:{
+'main.tex':String.raw`
+\documentclass{article}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+
+\title{Untitled}
+\author{Your Name}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+Start writing here.
+
+\end{document}
+`}},
+};
+
+// ============================================================
+//  ROUTING + INIT
+// ============================================================
+$('tplMenuItems').innerHTML=Object.entries(TEMPLATES).filter(([k])=>k!=='blank'&&k!=='article').map(([k,t])=>`<button class="mi" onclick="newFromTemplate('${k}')">${t.icon} ${esc(t.name)}</button>`).join('');
+async function route(){
+  closeMenus();
+  const m=location.hash.match(/^#\/project\/([\w-]+)/);
+  if(m){if(!project||project.id!==m[1])await openProjectId(m[1]);else{$('dash').hidden=true;$('ide').hidden=false;setTimeout(()=>cm.refresh(),20);}}
+  else{if(project&&canEdit())project.files[current].content=cm.getValue();if(project)await saveProject();await showDash();}
+}
+addEventListener('hashchange',route);
+(async function init(){
+  setLayout(innerWidth<=900?'editor':LS.get('layout','both'));
+  if(innerWidth<=900)document.body.classList.add('noside');
+  setEdMode(visual?'visual':'code');applySettings();
+  try{await DB.open();}catch(e){memProjects={};toast('Browser storage is blocked (private mode?) – projects won’t be kept after you close the tab',6000);}
+  const all=await store.all();
+  if(!all.length){const t=TEMPLATES.article;const files={};for(const[p,c]of Object.entries(t.files))files[p]=typeof c==='string'?{type:'text',content:c.replace(/^\n/,'')}:{type:'bin',content:b64ToBlob(c.b64,c.mime)};
+    await store.put({id:uid(),name:'Example research paper',files,folders:[],main:'main.tex',updated:Date.now(),tags:[]});}
+  await route();
+})();
+</script>
+</body>
+</html>
