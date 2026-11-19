@@ -631,6 +631,9 @@ table.kt{width:100%;border-collapse:collapse}
   <div class="mhd">Auto compile</div>
   <button class="mi" onclick="setSetting('auto','on')"><span class="ck" id="ac-on"></span>On</button>
   <button class="mi" onclick="setSetting('auto','off')"><span class="ck" id="ac-off"></span>Off</button>
+  <div class="msep"></div><div class="mhd">Speed</div>
+  <button class="mi" onclick="setSetting('draft','on')"><span class="ck" id="dr-on"></span>Fast draft (skip figures)</button>
+  <button class="mi" onclick="setSetting('draft','off')"><span class="ck" id="dr-off"></span>Full quality</button>
   <div class="msep"></div><div class="mhd">Compiler</div>
   <button class="mi" onclick="setSetting('compiler','pdflatex')"><span class="ck" id="cc-pdflatex"></span>pdfLaTeX</button>
   <button class="mi" onclick="setSetting('compiler','xelatex')"><span class="ck" id="cc-xelatex"></span>XeLaTeX</button>
@@ -766,7 +769,8 @@ function openMenu(id,btn,x,y){
   if(openMenuEl===m){closeMenus();return;}
   closeMenus();
   if(id==='mLayout'||id==='mView'){['both','editor','pdf'].forEach(l=>{const a=$('lk-'+l),b=$('ck-'+l);const on=document.body.classList.contains('l-'+l);if(a)a.textContent=on?'✓':'';if(b)b.textContent=on?'✓':'';});}
-  if(id==='mRecomp'){['on','off'].forEach(v=>$('ac-'+v).textContent=settings.auto===v?'✓':'');['pdflatex','xelatex','lualatex'].forEach(v=>$('cc-'+v).textContent=settings.compiler===v?'✓':'');}
+  if(id==='mRecomp'){['on','off'].forEach(v=>$('ac-'+v).textContent=settings.auto===v?'✓':'');
+    ['on','off'].forEach(v=>{const el=$('dr-'+v);if(el)el.textContent=settings.draft===v?'✓':'';});['pdflatex','xelatex','lualatex'].forEach(v=>$('cc-'+v).textContent=settings.compiler===v?'✓':'');}
   m.classList.add('on');openMenuEl=m;openMenuBtn=btn||null;if(btn)btn.classList.add('open');
   const r=btn?btn.getBoundingClientRect():{left:x,bottom:y,right:x};
   const mw=m.offsetWidth,mh=m.offsetHeight;
@@ -798,7 +802,7 @@ let project=null,current=null,selected=null,tabs=[];
 const docs={};
 let openFolders=new Set(LS.get('openFolders',[]));
 let lastLog='',lastEntries=[];
-const settings=Object.assign({compiler:'pdflatex',server:'auto',auto:'off',theme:'sedark',font:'14',spell:'off',hints:'on',brackets:'on'},LS.get('settings',{}));
+const settings=Object.assign({compiler:'pdflatex',server:'auto',auto:'off',draft:'off',theme:'sedark',font:'14',spell:'off',hints:'on',brackets:'on'},LS.get('settings',{}));
 if(settings.theme!=='sedark'&&settings.theme!=='selight')settings.theme='sedark';
 
 // ============================================================
@@ -909,7 +913,10 @@ cm.on('changes',()=>{
   project.files[current].content=cm.getValue();
   clearTimeout(saveT);saveT=setTimeout(saveProject,700);
   clearTimeout(outlineT);outlineT=setTimeout(renderOutline,350);
-  if(settings.auto==='on'){clearTimeout(autoT);autoT=setTimeout(()=>compile(true),2500);}
+  if(settings.auto==='on'){clearTimeout(autoT);
+    // a slow server must not be hammered: wait at least as long as the last build
+    const wait=Math.min(60000,Math.max(2500,Math.round((window.__lastCompileMs||0)*1.5)));
+    autoT=setTimeout(()=>compile(true),wait);}
   scheduleVisual();
 });
 cm.on('cursorActivity',()=>{scheduleVisual();clearTimeout(curSecT);curSecT=setTimeout(markCurrentSection,150);});
@@ -1302,16 +1309,131 @@ async function compile(isAuto){
   const t0=performance.now();$('pdfStatus').textContent='';
   try{
     if(settings.server!=='texlive'){
-      try{await compileYtotech();$('pdfStatus').textContent=`${((performance.now()-t0)/1000).toFixed(1)} s`;return;}
+      try{await compileYtotech();window.__lastCompileMs=performance.now()-t0;
+        $('pdfStatus').textContent=`${(window.__lastCompileMs/1000).toFixed(1)} s`+(settings.draft==='on'?' · draft':'');
+        scholSpeedNote();return;}
       catch(e){if(e.kind==='latex'){$('pdfStatus').textContent='Compile failed – see logs';return;}if(settings.server==='ytotech')throw e;console.warn('Falling back to TeXLive.net',e);}
     }
-    await compileTexliveNet();$('pdfStatus').textContent=`${((performance.now()-t0)/1000).toFixed(1)} s · TeXLive.net`;
+    await compileTexliveNet();window.__lastCompileMs=performance.now()-t0;
+    $('pdfStatus').textContent=`${(window.__lastCompileMs/1000).toFixed(1)} s · TeXLive.net`+(settings.draft==='on'?' · draft':'');
+    scholSpeedNote();
   }catch(e){$('pdfStatus').textContent='Server unreachable';if(!isAuto)info('Could not reach the compile server',`<p>${esc(e.message||e)}</p><p>LaTeX is compiled by a free TeX Live server on the internet, so you need a connection. Try again, or change <b>Settings → Compile server</b>.</p>`);}
   finally{compiling=false;setCompiling(false);}
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  COMPILE SPEED
+//  Every compile re-uploads the whole project to a free public TeX
+//  server. For a paper with vector figures that is ~1.1 MB per build.
+//  Draft mode skips the images entirely; pruning drops files the
+//  document never reads; the base64 cache stops re-encoding blobs.
+// ═══════════════════════════════════════════════════════════════
+function scholSpeedNote(){
+  const sk=window.__lastSkipped||[];
+  if(settings.draft==='on'){
+    lastEntries=[{level:'info',msg:'Fast draft: figures were not uploaded or drawn. '
+      +'Page layout is unchanged; switch to Full quality before exporting.',
+      detail:sk.length?('skipped: '+sk.slice(0,12).join(', ')):'',file:'',line:0}]
+      .concat(lastEntries.filter(e=>e.level==='error'));
+    updateBadge();renderLogs();
+  }
+}
+
+const scholB64Cache=new WeakMap();
+async function scholB64(blob){
+  const hit=scholB64Cache.get(blob);
+  if(hit)return hit;
+  const v=await blobToB64(blob);
+  scholB64Cache.set(blob,v);
+  return v;
+}
+
+// files the main document can actually reach
+function scholReachable(files, main){
+  const keep=new Set([main]);
+  const seen=new Set();
+  const visit=(path)=>{
+    if(seen.has(path))return;seen.add(path);
+    const f=files[path];
+    if(!f||f.type!=='text'||typeof f.content!=='string')return;
+    const src=f.content;
+    // \graphicspath{{figures/}{assets/}} moves where an image actually lives
+    const gp=[];
+    const gpm=src.match(/\\graphicspath\{([^]*?)\}\s*(?:%|\n)/);
+    if(gpm)for(const d of gpm[1].matchAll(/\{([^{}]*)\}/g))gp.push(d[1]);
+    const dir=path.includes('/')?path.slice(0,path.lastIndexOf('/')+1):'';
+    const add=(name,exts)=>{
+      if(!name)return;
+      const base=name.replace(/^\.\//,'');
+      const cands=[base,...exts.map(e=>base+e)];
+      let found=false;
+      for(const c of cands){
+        for(const pre of ['',dir,...gp,...gp.map(g=>dir+g)]){
+          if(files[pre+c]){keep.add(pre+c);visit(pre+c);found=true;}
+        }
+      }
+      if(found)return;
+      // last resort: keep anything whose file name matches, wherever it sits
+      const names=new Set(cands.map(c=>c.split('/').pop()));
+      for(const q of Object.keys(files))
+        if(names.has(q.split('/').pop())){keep.add(q);visit(q);found=true;}
+    };
+    let m;
+    const g=/\\includegraphics(?:\[[^\]]*\])?\{([^}]*)\}/g;
+    while((m=g.exec(src)))add(m[1],['.pdf','.png','.jpg','.jpeg','.eps']);
+    const inc=/\\(?:input|include)\{([^}]*)\}/g;
+    while((m=inc.exec(src)))add(m[1],['.tex']);
+    const cls=/\\documentclass(?:\[[^\]]*\])?\{([^}]*)\}/g;
+    while((m=cls.exec(src)))add(m[1],['.cls']);
+    const pkg=/\\usepackage(?:\[[^\]]*\])?\{([^}]*)\}/g;
+    while((m=pkg.exec(src)))m[1].split(',').forEach(n=>add(n.trim(),['.sty']));
+    const bib=/\\(?:bibliography|addbibresource)\{([^}]*)\}/g;
+    while((m=bib.exec(src)))m[1].split(',').forEach(n=>add(n.trim(),['.bib']));
+    const sty=/\\bibliographystyle\{([^}]*)\}/g;
+    while((m=sty.exec(src)))add(m[1],['.bst']);
+    // anything referenced by a bare relative path (logos used by a class, …)
+    const any=/[\w][\w./-]*\.(?:png|jpg|jpeg|pdf|eps|sty|cls|bst|def|clo)/g;
+    while((m=any.exec(src)))if(files[m[0]])  {keep.add(m[0]);visit(m[0]);}
+  };
+  visit(main);
+  // a class or style file may pull in assets of its own
+  for(const p of Object.keys(files)) if(/\.(cls|sty)$/i.test(p)){keep.add(p);visit(p);}
+  // Only unused *text sources* are dropped. Binaries and support files stay:
+  // a wrongly pruned asset breaks the build, and the saving is not worth it.
+  for(const [p,f] of Object.entries(files))
+    if(!/\.(tex|md|txt|lua)$/i.test(p)||f.type!=='text')keep.add(p);
+  return keep;
+}
+
+// build the resource list the compile API receives
+async function scholResources(draft){
+  const files=project.files, main=project.main;
+  const keep=scholReachable(files,main);
+  const skipped=[];
+  const res=[];
+  for(const [p,f] of Object.entries(files)){
+    if(!keep.has(p)){skipped.push(p);continue;}
+    if(f.type==='text'){
+      let content=f.content;
+      if(p===main&&draft){
+        // graphicx draft keeps every box the same size, so the page layout
+        // is unchanged - only the bitmaps stop being drawn
+        content=content.replace(/(\\documentclass(?:\[[^\]]*\])?\{[^}]*\})/,
+                                '$1\n\\usepackage[draft]{graphicx}');
+      }
+      res.push(p===main?{main:true,path:p,content}:{path:p,content});
+    }else{
+      if(draft&&/\.(png|jpe?g|pdf|eps)$/i.test(p)){skipped.push(p);continue;}
+      res.push({path:p,file:await scholB64(f.content)});
+    }
+  }
+  return {res,skipped};
+}
+
 async function compileYtotech(){
-  const resources=[];
-  for(const[p,f]of Object.entries(project.files)){if(f.type==='text')resources.push(p===project.main?{main:true,path:p,content:f.content}:{path:p,content:f.content});else resources.push({path:p,file:await blobToB64(f.content)});}
+  const built=await scholResources(settings.draft==='on');
+  const resources=built.res;
+  window.__lastSkipped=built.skipped;
   let res;
   try{res=await fetch('https://latex.ytotech.com/builds/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({compiler:settings.compiler,resources})});}
   catch(e){const er=new Error('Network error: '+e.message);er.kind='net';throw er;}
@@ -1330,7 +1452,9 @@ async function compileYtotech(){
 async function compileTexliveNet(){
   const bins=Object.entries(project.files).filter(([,f])=>f.type!=='text').map(([p])=>p);
   const fd=new FormData();
-  fd.append('filecontents[]',project.files[project.main].content);fd.append('filename[]','document.tex');
+  let mainSrc=project.files[project.main].content;
+  if(settings.draft==='on')mainSrc=mainSrc.replace(/(\\documentclass(?:\[[^\]]*\])?\{[^}]*\})/,'$1\n\\usepackage[draft]{graphicx}');
+  fd.append('filecontents[]',mainSrc);fd.append('filename[]','document.tex');
   for(const[p,f]of Object.entries(project.files))if(f.type==='text'&&p!==project.main){fd.append('filecontents[]',f.content);fd.append('filename[]',p);}
   fd.append('engine',settings.compiler);fd.append('return','pdf');
   const note=bins.length?[{level:'warn',msg:`TeXLive.net can’t receive images or binary files (${bins.length} skipped)`,detail:bins.join(', ')+'\nUse Settings → Compile server → Auto to include them.',file:'',line:0}]:[];
